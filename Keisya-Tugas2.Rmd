@@ -17,17 +17,17 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r cars}
 library(readxl)
-house = read.csv("House Prices.csv")
-head(house)
+df = read.csv("House Prices.csv")
+head(df)
 ```
 
 Beberapa variabel numerik memiliki nilai NA seperti : LotFrontage, MasVnrArea,GarageYrBlt
 ```{r}
-numericVariabel = c('LotFrontage','MasVnrArea','GarageYrBlt')
+numericVariabel = c('LotFrontage','MasVnrArea','GarageYrBlt','TotalBsmtSF', 'GarageCars', 'GarageArea', 'BsmtFinSF1' ,'BsmtFinSF2', 'BsmtUnfSF',  'MasVnrArea')
 library(ggplot2)
 
 for (i in numericVariabel) {
- histogram = ggplot(house, aes_string(x = i)) +
+ histogram = ggplot(df, aes_string(x = i)) +
              geom_histogram()
  print(histogram)
 }
@@ -36,9 +36,142 @@ for (i in numericVariabel) {
 ```
 Dari histogram, data tidak berdistribus normal dan terdapat outlier sehingga NA dapat diisi dengan median
 ```{r}
-house$LotFrontage[is.na(house$LotFrontage)] = median(house$LotFrontage, na.rm = TRUE)
+# Imputasi dengan median
+df$LotFrontage[is.na(df$LotFrontage)] <- median(df$LotFrontage, na.rm = TRUE)
+df$GarageYrBlt[is.na(df$GarageYrBlt)] <- median(df$GarageYrBlt, na.rm = TRUE)
+df$GarageCars[is.na(df$GarageCars)]   <- median(df$GarageCars, na.rm = TRUE)
+df$GarageArea[is.na(df$GarageArea)]   <- median(df$GarageArea, na.rm = TRUE)
+df$TotalBsmtSF[is.na(df$TotalBsmtSF)] <- median(df$TotalBsmtSF, na.rm = TRUE)
+df$BsmtFinSF1[is.na(df$BsmtFinSF1)]   <- median(df$BsmtFinSF1, na.rm = TRUE)
+df$BsmtFinSF2[is.na(df$BsmtFinSF2)]   <- median(df$BsmtFinSF2, na.rm = TRUE)
+df$BsmtUnfSF[is.na(df$BsmtUnfSF)]     <- median(df$BsmtUnfSF, na.rm = TRUE)
+df$MasVnrArea[is.na(df$MasVnrArea)] <- median(df$MasVnrArea, na.rm = TRUE)
 
-house$MasVnrArea[is.na(house$MasVnrArea)] = median(house$MasVnrArea, na.rm = TRUE)
 
-house$GarageYrBlt[is.na(house$GarageYrBlt)] = median(house$GarageYrBlt, na.rm = TRUE)
+
+var_numerik_lengkap = c('LotFrontage',
+'LotArea',
+'OverallQual',
+'OverallCond',
+'YearBuilt',
+'YearRemodAdd',
+'MasVnrArea',
+'BsmtFinSF1',
+'BsmtFinSF2',
+'BsmtUnfSF',
+'TotalBsmtSF',
+'X1stFlrSF',
+'X2ndFlrSF',
+'GrLivArea',
+'FullBath',
+'HalfBath',
+'BedroomAbvGr',
+'KitchenAbvGr',
+'TotRmsAbvGrd',
+'Fireplaces',
+'GarageYrBlt',
+'GarageCars',
+'GarageArea',
+'WoodDeckSF',
+'OpenPorchSF',
+'EnclosedPorch',
+'X3SsnPorch',
+'ScreenPorch',
+'PoolArea',
+'MiscVal',
+'MoSold',
+'YrSold')
+
+# korelasi Spearman semua variabel numerik terhadap SalePrice
+cor_hasil <- sapply(var_numerik_lengkap, function(v) {
+  cor(df[[v]], df$SalePrice, method = "spearman")
+})
+
+# Urutkan dari terbesar ke terkecil (nilai absolut)
+cor_hasil <- sort(cor_hasil, decreasing = TRUE)
+
+# Tampilkan hasilnya
+cor_df <- data.frame(
+  Variabel   = names(cor_hasil),
+  Korelasi   = round(cor_hasil, 3),
+  Kekuatan   = ifelse(abs(cor_hasil) >= 0.5, "Kuat",
+               ifelse(abs(cor_hasil) >= 0.3, "Sedang", "Lemah"))
+)
+print(cor_df)
 ```
+Cek MLR dari variabel numerik yang Korelasi Spearman terhadap SalePrice kuat 
+```{r}
+#semua variabel yang korelasi dengan saleprice nya kuat
+house_numeric_mlr = lm(SalePrice~
+OverallQual +
+YearBuilt +
+YearRemodAdd +
+TotalBsmtSF +
+X1stFlrSF +
+GrLivArea + 
+FullBath + 
+TotRmsAbvGrd +
+Fireplaces +
+GarageYrBlt +
+GarageCars +
+GarageArea, 
+data = house)
+
+summary(house_numeric_mlr)
+
+#kurangi 1 variabel GarageYrBlt yang p-valuenya tertinggi
+house_numeric_mlr = lm(SalePrice~
+OverallQual +
+YearBuilt +
+YearRemodAdd +
+TotalBsmtSF +
+X1stFlrSF +
+GrLivArea + 
+FullBath + 
+TotRmsAbvGrd +
+Fireplaces +
+GarageCars +
+GarageArea, 
+data = house)
+
+summary(house_numeric_mlr)
+
+#kurangi 1 variabel TotRmsAbvGrd yang p-valuenya tertinggi
+house_numeric_mlr = lm(SalePrice~
+OverallQual +
+YearBuilt +
+YearRemodAdd +
+TotalBsmtSF +
+X1stFlrSF +
+GrLivArea + 
+FullBath + 
+Fireplaces +
+GarageCars +
+GarageArea, 
+data = house)
+
+summary(house_numeric_mlr)
+
+# uji multikolinearitas dengan VIF
+library(car)
+vif(house_numeric_mlr)
+
+#Garage cars ada multikolinearitas tinggi, maka eliminasi
+house_numeric_mlr = lm(SalePrice~
+OverallQual +
+YearBuilt +
+YearRemodAdd +
+TotalBsmtSF +
+X1stFlrSF +
+GrLivArea + 
+FullBath + 
+Fireplaces +
+GarageArea, 
+data = house)
+
+summary(house_numeric_mlr)
+
+# cek lagi dengan vif
+vif(house_numeric_mlr)
+```
+
