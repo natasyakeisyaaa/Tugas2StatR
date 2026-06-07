@@ -207,12 +207,13 @@ colSums(is.na(df))
 # Semua variabel ordinal dan numerik sudah tidak memiliki NA
 
 ```
-Tersisa variabel Alley, GarageType, dan MiscFeature yang masih memiliki nilai NA. NA di variabel-variabel ini berarti tidak memiliki gang, tidak memiliki garasi, dan tidak memiliki fitur tambahan. Diperlukan pengisian NA sebagai 'None'
+Tersisa variabel Alley, GarageType, Electrical, MasVnrType, dan MiscFeature yang masih memiliki nilai NA. NA di variabel-variabel ini berarti tidak memiliki gang, tidak memiliki garasi, dan tidak memiliki fitur tambahan. Diperlukan pengisian NA sebagai 'None'
 ```{r}
 df$Alley[is.na(df$Alley)] <- "NoAlley"
 df$MasVnrType[is.na(df$MasVnrType)] <- "None"
 df$GarageType[is.na(df$GarageType)] <- "None"
 df$MiscFeature[is.na(df$MiscFeature)]   <- "None"
+df$Electrical[is.na(df$Electrical)] <- "FuseA" #pilih yang average 
 
 # Cek apakah masih ada missing value
 colSums(is.na(df)) 
@@ -273,9 +274,9 @@ par(mar = c(5, 4, 4, 2))
 Garis putus-putus merah menandai batas korelasi sedang (±0.3), dan garis titik merah tua menandai batas korelasi kuat (±0.5). Variabel di sebelah kanan atau kiri garis merah dianggap cukup bermakna untuk digunakan sebagai prediktor.
 
 ```{r filter-numerik}
-# Pilih variabel dengan korelasi >= 0.3 (nilai mutlak)
-var_num_terpilih <- names(cor_hasil[abs(cor_hasil) >= 0.3])
-cat("Variabel numerik terpilih (|rho| >= 0.3):\n")
+# Pilih variabel dengan korelasi >= 0.5 (nilai mutlak)
+var_num_terpilih <- names(cor_hasil[abs(cor_hasil) >= 0.5])
+cat("Variabel numerik terpilih (|rho| >= 0.5):\n")
 print(var_num_terpilih)
 cat("\nTotal:", length(var_num_terpilih), "variabel\n")
 ```
