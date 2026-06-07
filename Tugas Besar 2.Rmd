@@ -11,12 +11,13 @@ output: html_document
 
 ```{r baca-data}
 df <- read.csv("House Prices.csv")
+head(df)
 
 cat("Jumlah baris (rumah)   :", nrow(df), "\n")
 cat("Jumlah kolom (variabel):", ncol(df), "\n")
 ```
 
-Dataset House Prices berisi informasi 1.460 rumah dengan 79 atribut yang menggambarkan karakteristik fisik, lokasi, dan kondisi rumah. Tujuan analisis ini adalah memprediksi kolom `SalePrice` (harga jual rumah). Analisis dibagi menjadi tiga bagian:
+Dataset House Prices berisi informasi 1.460 rumah dengan 81 atribut yang menggambarkan karakteristik fisik, lokasi, dan kondisi rumah. Tujuan analisis ini adalah memprediksi kolom `SalePrice` (harga jual rumah). Analisis dibagi menjadi tiga bagian:
 
 1. Penyesuaian data: memperbaiki tipe data dan menangani nilai kosong
 2. Eksplorasi data: menemukan faktor-faktor yang mempengaruhi harga
@@ -31,16 +32,17 @@ Sebelum menganalisis, variabel perlu dikelompokkan berdasarkan tipenya karena se
 - Kategorik nominal: kategori tanpa urutan (nama kelurahan, jenis atap)
 
 ```{r klasifikasi-variabel}
-var_numerik <- c("LotFrontage", "LotArea", "OverallQual", "OverallCond",
-                 "YearBuilt", "YearRemodAdd", "MasVnrArea",
+var_numerik <- c("LotFrontage", "LotArea",
+                 "YearBuilt", "YearRemodAdd", "MasVnrArea", "OverallQual", "OverallCond",
                  "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF",
                  "X1stFlrSF", "X2ndFlrSF", "GrLivArea",
-                 "FullBath", "HalfBath", "BedroomAbvGr",
+                 "FullBath", "HalfBath", "BedroomAbvGr","KitchenAbvGr",
                  "TotRmsAbvGrd", "Fireplaces",
                  "GarageYrBlt", "GarageCars", "GarageArea",
-                 "WoodDeckSF", "OpenPorchSF", "PoolArea", "MoSold", "YrSold")
+                 "WoodDeckSF", "EnclosedPorch","X3SsnPorch",
+                 "ScreenPorch","OpenPorchSF", "PoolArea", "MoSold", "YrSold", "MiscVal", "LowQualFinSF", "BsmtFullBath","BsmtHalfBath")
 
-var_ordinal <- c("ExterQual", "ExterCond", "BsmtQual", "BsmtCond",
+var_ordinal <- c("ExterQual", "ExterCond", "BsmtQual", "BsmtCond", 
                  "BsmtExposure", "BsmtFinType1", "BsmtFinType2",
                  "HeatingQC", "KitchenQual", "FireplaceQu",
                  "GarageFinish", "GarageQual", "GarageCond",
@@ -54,6 +56,10 @@ var_kategorik <- c("MSSubClass", "MSZoning", "Street", "Alley", "LotShape",
                    "CentralAir", "Electrical", "Functional", "GarageType",
                    "PavedDrive", "MiscFeature", "SaleType", "SaleCondition")
 
+length(var_numerik)
+length(var_kategorik)
+length(var_ordinal)
+
 cat("Jumlah variabel numerik  :", length(var_numerik), "\n")
 cat("Jumlah variabel ordinal  :", length(var_ordinal), "\n")
 cat("Jumlah variabel kategorik:", length(var_kategorik), "\n")
@@ -63,6 +69,21 @@ cat("Jumlah variabel kategorik:", length(var_kategorik), "\n")
 
 Variabel ordinal seperti `ExterQual` (Kualitas Eksterior: Poor/Fair/Average/Good/Excellent) perlu diubah ke angka agar bisa digunakan dalam perhitungan korelasi dan model regresi. Proses ini disebut **ordinal encoding**: setiap kategori diberi angka sesuai urutannya.
 ```{r ubah-ordinal}
+#Fungsi untuk variabel dengan skala rating standar (GLQ / ALQ / BLQ / Rec / LwQ / Unf / NA)
+ubah_rating <- function(x) {
+  urutan <- c("Unf", "LwQ", "Rec", "BLQ", "ALQ", "GLQ")
+  hasil <- match(x, urutan) #Unf = 1, LwQ = 2, Rec = 3, BLQ = 4, ALQ = 5, GLQ = 6
+  hasil[is.na(hasil)] <- 0 #NA (tidak ada basement) = 0
+  return(hasil)
+}
+
+#Terapkan ke variabel yang memakai rating
+var_rating <- c("BsmtFinType1", "BsmtFinType2")
+
+for (v in var_rating) {
+  df[[paste0(v, "_num")]] <- ubah_rating(df[[v]])
+}
+
 # Fungsi untuk variabel dengan skala kualitas standar (Po/Fa/TA/Gd/Ex)
 ubah_kualitas <- function(x) {
   urutan <- c("Po", "Fa", "TA", "Gd", "Ex")
@@ -74,7 +95,7 @@ ubah_kualitas <- function(x) {
 # Terapkan ke semua variabel kualitas
 var_kualitas <- c("ExterQual", "ExterCond", "BsmtQual", "BsmtCond",
                   "HeatingQC", "KitchenQual", "FireplaceQu",
-                  "GarageQual", "GarageCond")
+                  "GarageQual", "GarageCond", "PoolQC")
 
 for (v in var_kualitas) {
   df[[paste0(v, "_num")]] <- ubah_kualitas(df[[v]])
@@ -96,6 +117,14 @@ ubah_finish <- function(x) {
   return(hasil)
 }
 df$GarageFinish_num <- ubah_finish(df$GarageFinish)
+
+ubah_fence <- function(x) {
+  urutan <- c("MnWw", "GdWo", "MnPrv", "GdPrv")   # MnWw=1, GdWo=2, MnPrv=3, GdPrv=4
+  hasil  <- match(x, urutan)
+  hasil[is.na(hasil)] <- 0
+  return(hasil)
+}
+df$Fence_num <- ubah_fence(df$Fence)
 
 # CentralAir: Y=1, N=0
 df$CentralAir_num <- as.integer(df$CentralAir == "Y")
@@ -124,7 +153,7 @@ var_numerik_lengkap <- c(var_numerik,
                           "BsmtCond_num", "BsmtExposure_num", "HeatingQC_num",
                           "KitchenQual_num", "FireplaceQu_num", "GarageQual_num",
                           "GarageCond_num", "GarageFinish_num",
-                          "CentralAir_num", "PavedDrive_num")
+                          "CentralAir_num", "PavedDrive_num", "BsmtFinType1_num", "BsmtFinType2_num", "PoolQC_num", "Fence_num")
 
 mv_num <- sapply(df[, var_numerik_lengkap], function(x) sum(is.na(x)))
 mv_num <- sort(mv_num[mv_num > 0], decreasing = TRUE)
@@ -166,6 +195,7 @@ var_imputasi <- c("LotFrontage", "GarageYrBlt", "GarageCars",
                   "BsmtFinSF2", "BsmtUnfSF", "MasVnrArea")
 
 # Imputasi missing value dengan median
+colSums(is.na(df))
 
 df$LotFrontage[is.na(df$LotFrontage)] <- median(df$LotFrontage, na.rm = TRUE)
 df$GarageYrBlt[is.na(df$GarageYrBlt)] <- median(df$GarageYrBlt, na.rm = TRUE)
