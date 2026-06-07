@@ -1,0 +1,169 @@
+---
+title: "Tugas 2"
+author: "Audrianna"
+date: "2026-06-04"
+output: html_document
+---
+
+#Membaca Data Set
+```{r setup, include=FALSE}
+
+library(dplyr)
+
+#baca data set
+house <- read.csv("House Prices.csv", sep = ',')
+```
+
+```{r}
+#melihat data 
+head(house)
+```
+
+#1. Mengubah Tipe Data
+
+#Melakukan visualisasi - Ver Anna 1
+```{r}
+library(ggplot2)
+
+#daftar atribut
+vars <- c("BsmtQual", "BsmtCond", "BsmtExposure", "BsmtFinType1", "BsmtFinType2", "Heating",  "HeatingQC", "CentralAir", "Electrical", "KitchenQual", "Functional", "FireplaceQu", "GarageType", "GarageFinish", "GarageQual", "GarageCond", "PavedDrive", "PoolQC", "Fence", "MiscFeature", "SaleType", "SaleCondition")
+
+for(col in vars){
+  p <- ggplot(house, aes_string(x = col)) +
+       geom_bar(fill = "blue") +
+       ggtitle(col)
+
+  print(p)
+}
+
+```
+
+# Pendahuluan
+
+Dataset **House Prices** berisi informasi 1.460 rumah di Ames, Iowa, Amerika Serikat. Setiap baris adalah satu rumah, dan ada 79 kolom yang menggambarkan karakteristik
+rumah tersebut. Tujuan kita adalah memprediksi kolom `SalePrice` (harga jual rumah).
+
+Analisis ini dibagi menjadi tiga bagian besar:
+1. Penyesuaian data untuk memperbaiki tipe data dan menangani nilai kosong (missing value)
+2. Eksplorasi data untuk mencari faktor apa saja yang benar-benar mempengaruhi harga
+3. Pemodelan untuk membuat model prediksi dan memilih yang terbaik
+
+# Bagian 1: Penyesuaian Data
+## 1.1 Membaca Data
+```{r baca-data}
+# Membaca file CSV
+# na.strings = c("NA","") artinya: nilai "NA" atau sel kosong akan dianggap sebagai NA (missing)
+df <- read.csv("House Prices.csv")
+head(df)
+
+# Lihat ukuran data
+cat("Jumlah baris (rumah)  :", nrow(df), "\n")
+cat("Jumlah kolom (variabel):", ncol(df), "\n")
+```
+
+## 1.2 Tipe Variabel
+Variabel terbagi menjadi 3 jenis:
+- Numeri Kontinu: Angka yang bisa bernilai berapa saja (Luas rumah, harga)
+- Numerik diskrit: Angka bulat terhitung (Jumlah kamar mandi)
+- Kategorik nominal: Kategori tanpa urutan (Jenis atap, nama kelurahan)
+- Kategorik ordinal: Kategori dengan urutan bermakna (Poor < Fair < Good < Excellent)
+
+kategorik ordinal akan dibaca sebagai teks, padahal sebenarnya ada urutan, perlu diubah menjadi angka agar bisa dianalisis dengan korelasi dan regresi.
+```{r pisah-variabel}
+#Daftar variabel numerik 
+var_numerik <- c("LotFrontage", "LotArea", "OverallQual", "OverallCond",
+                 "YearBuilt", "YearRemodAdd", "MasVnrArea",
+                 "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF",
+                 "X1stFlrSF", "X2ndFlrSF", "GrLivArea",
+                 "FullBath", "HalfBath", "BedroomAbvGr",
+                 "TotRmsAbvGrd", "Fireplaces",
+                 "GarageYrBlt", "GarageCars", "GarageArea",
+                 "WoodDeckSF", "OpenPorchSF", "PoolArea", "MoSold", "YrSold")
+
+# Daftar variabel kategorik ordinal (punya urutan: Poor -> Excellent)
+#akan diubah angka
+var_ordinal <- c("ExterQual", "ExterCond", "BsmtQual", "BsmtCond",
+                 "BsmtExposure", "BsmtFinType1", "BsmtFinType2",
+                 "HeatingQC", "KitchenQual", "FireplaceQu",
+                 "GarageFinish", "GarageQual", "GarageCond",
+                 "PoolQC", "Fence")
+
+#Daftar variabel kategorik nominal (tidak punya urutan)
+var_kategorik <- c("MSZoning", "Street", "Alley", "LotShape", "LandContour",
+                   "Utilities", "LotConfig", "LandSlope", "Neighborhood",
+                   "Condition1", "Condition2", "BldgType", "HouseStyle",
+                   "RoofStyle", "RoofMatl", "Exterior1st", "Exterior2nd",
+                   "MasVnrType", "Foundation", "Heating", "CentralAir",
+                   "Electrical", "Functional", "GarageType",
+                   "PavedDrive", "MiscFeature", "SaleType", "SaleCondition")
+
+#Kesimpulan jumlah variabel
+cat("Jumlah variabel numerik  :", length(var_numerik), "\n")
+cat("Jumlah variabel ordinal  :", length(var_ordinal), "\n")
+cat("Jumlah variabel kategorik:", length(var_kategorik), "\n")
+```
+
+## 1.3 Menguabh Variabel Ordinal ke Numerik
+Variabel ordinal seperti ExterQual (Kualitas material bagian luar rumah) --> (Excellent/Good/Average/Fair/Poor) perlu diubah ke angka. Dilakukan ordinal encoding yaitu memberi angka sesuai urutannya.
+
+Variabel perlu diubah karena kalau kita biarkan sebagai teks, R tidak tahu bahwa "Excellent" > "Good" > "Fair". Dengan mengubahnya ke angka, informasi urutan tersebut bisa digunakan dalam  perhitungan korelasi dan model regresi.
+
+```{r transformasi-ordinal}
+# fungsi 
+ubah_kualitas <- function(x) {
+  urutan <- c("Po", "Fa", "TA", "Gd", "Ex")
+  hasil  <- match(x, urutan)       # Po=1, Fa=2, TA=3, Gd=4, Ex=5
+  hasil[is.na(hasil)] <- 0         # NA (tidak ada fitur) = 0
+  return(hasil)
+}
+
+#variabel kualitas
+df$ExterQual_num   <- ubah_kualitas(df$ExterQual)
+df$ExterCond_num   <- ubah_kualitas(df$ExterCond)
+df$BsmtQual_num    <- ubah_kualitas(df$BsmtQual)
+df$BsmtCond_num    <- ubah_kualitas(df$BsmtCond)
+df$HeatingQC_num   <- ubah_kualitas(df$HeatingQC)
+df$KitchenQual_num <- ubah_kualitas(df$KitchenQual)
+df$FireplaceQu_num <- ubah_kualitas(df$FireplaceQu)
+df$GarageQual_num  <- ubah_kualitas(df$GarageQual)
+df$GarageCond_num  <- ubah_kualitas(df$GarageCond)
+
+#variabel dengan skala berbeda yang punya skala berbeda, buat fungsi sendiri
+ubah_exposure <- function(x) {
+  urutan <- c("No", "Mn", "Av", "Gd")   # No=1, Mn=2, Av=3, Gd=4
+  hasil  <- match(x, urutan)
+  hasil[is.na(hasil)] <- 0
+  return(hasil)
+}
+df$BsmtExposure_num <- ubah_exposure(df$BsmtExposure)
+
+ubah_finish <- function(x) {
+  urutan <- c("Unf", "RFn", "Fin")      # Unf=1, RFn=2, Fin=3
+  hasil  <- match(x, urutan)
+  hasil[is.na(hasil)] <- 0
+  return(hasil)
+}
+df$GarageFinish_num <- ubah_finish(df$GarageFinish)
+
+df$CentralAir_num <- as.integer(df$CentralAir == "Y")
+
+# Cek hasilnya
+table(df$CentralAir, df$CentralAir_num)
+#    0    1
+# N  XX   0
+# Y   0  XX
+
+ubah_paved <- function(x) {
+  urutan <- c("N", "P", "Y")            # N=1, P=2, Y=3... tapi kita mau N=0
+  hasil  <- match(x, urutan) - 1        # kurangi 1 supaya N=0, P=1, Y=2
+  return(hasil)
+}
+df$PavedDrive_num <- ubah_paved(df$PavedDrive)
+
+cat("Contoh hasil BsmtQual -> BsmtQual_num:\n")
+head(data.frame(BsmtQual = df$BsmtQual, BsmtQual_num = df$BsmtQual_num), 10)
+
+cat("=== Cek ExterQual ===\n")
+print(table(df$ExterQual, df$ExterQual_num, useNA = "always"))
+
+```
