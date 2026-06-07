@@ -81,7 +81,7 @@ ubah_rating <- function(x) {
 var_rating <- c("BsmtFinType1", "BsmtFinType2")
 
 for (v in var_rating) {
-  df[[paste0(v, "_num")]] <- ubah_rating(df[[v]])
+  df[[v]] <- ubah_rating(df[[v]])
 }
 
 # Fungsi untuk variabel dengan skala kualitas standar (Po/Fa/TA/Gd/Ex)
@@ -98,7 +98,7 @@ var_kualitas <- c("ExterQual", "ExterCond", "BsmtQual", "BsmtCond",
                   "GarageQual", "GarageCond", "PoolQC")
 
 for (v in var_kualitas) {
-  df[[paste0(v, "_num")]] <- ubah_kualitas(df[[v]])
+  df[[v]] <- ubah_kualitas(df[[v]])
 }
 
 # Variabel ordinal dengan skala berbeda
@@ -108,7 +108,7 @@ ubah_exposure <- function(x) {
   hasil[is.na(hasil)] <- 0
   return(hasil)
 }
-df$BsmtExposure_num <- ubah_exposure(df$BsmtExposure)
+df$BsmtExposure <- ubah_exposure(df$BsmtExposure)
 
 ubah_finish <- function(x) {
   urutan <- c("Unf", "RFn", "Fin")      # Unf=1, RFn=2, Fin=3
@@ -116,7 +116,7 @@ ubah_finish <- function(x) {
   hasil[is.na(hasil)] <- 0
   return(hasil)
 }
-df$GarageFinish_num <- ubah_finish(df$GarageFinish)
+df$GarageFinish <- ubah_finish(df$GarageFinish)
 
 ubah_fence <- function(x) {
   urutan <- c("MnWw", "GdWo", "MnPrv", "GdPrv")   # MnWw=1, GdWo=2, MnPrv=3, GdPrv=4
@@ -124,10 +124,10 @@ ubah_fence <- function(x) {
   hasil[is.na(hasil)] <- 0
   return(hasil)
 }
-df$Fence_num <- ubah_fence(df$Fence)
+df$Fence <- ubah_fence(df$Fence)
 
 # CentralAir: Y=1, N=0
-df$CentralAir_num <- as.integer(df$CentralAir == "Y")
+df$CentralAir <- as.integer(df$CentralAir == "Y")
 
 # PavedDrive: N=0, P=1, Y=2
 ubah_paved <- function(x) {
@@ -135,11 +135,13 @@ ubah_paved <- function(x) {
   hasil  <- match(x, urutan) - 1
   return(hasil)
 }
-df$PavedDrive_num <- ubah_paved(df$PavedDrive)
+df$PavedDrive <- ubah_paved(df$PavedDrive)
 
 # Cek hasil salah satu
 cat("Contoh konversi ExterQual:\n")
-print(table(df$ExterQual, df$ExterQual_num, useNA = "always"))
+print(table(df$ExterQual,useNA = "always"))
+
+head(df)
 ```
 
 ## 1.4 Menangani Missing Value
@@ -149,11 +151,11 @@ Sebelum mengisi nilai kosong, perlu diketahui berapa banyak missing value pada s
 ```{r cek-missing}
 # Gabungkan semua variabel numerik + hasil konversi ordinal
 var_numerik_lengkap <- c(var_numerik,
-                          "ExterQual_num", "ExterCond_num", "BsmtQual_num",
-                          "BsmtCond_num", "BsmtExposure_num", "HeatingQC_num",
-                          "KitchenQual_num", "FireplaceQu_num", "GarageQual_num",
-                          "GarageCond_num", "GarageFinish_num",
-                          "CentralAir_num", "PavedDrive_num", "BsmtFinType1_num", "BsmtFinType2_num", "PoolQC_num", "Fence_num")
+                          "ExterQual", "ExterCond", "BsmtQual",
+                          "BsmtCond", "BsmtExposure", "HeatingQC",
+                          "KitchenQual", "FireplaceQu", "GarageQual",
+                          "GarageCond", "GarageFinish",
+                          "CentralAir", "PavedDrive", "BsmtFinType1", "BsmtFinType2", "PoolQC", "Fence")
 
 mv_num <- sapply(df[, var_numerik_lengkap], function(x) sum(is.na(x)))
 mv_num <- sort(mv_num[mv_num > 0], decreasing = TRUE)
@@ -191,27 +193,30 @@ par(mfrow = c(1, 1))
 ```{r imputasi-numerik}
 # Isi missing value dengan median untuk semua variabel numerik yang perlu
 var_imputasi <- c("LotFrontage", "GarageYrBlt", "GarageCars",
-                  "GarageArea", "TotalBsmtSF", "BsmtFinSF1",
-                  "BsmtFinSF2", "BsmtUnfSF", "MasVnrArea")
+                  "GarageArea", "TotalBsmtSF", "BsmtFinSF1_num",
+                  "BsmtFinSF2_num", "BsmtUnfSF", "MasVnrArea")
 
 # Imputasi missing value dengan median
-colSums(is.na(df))
-
 df$LotFrontage[is.na(df$LotFrontage)] <- median(df$LotFrontage, na.rm = TRUE)
 df$GarageYrBlt[is.na(df$GarageYrBlt)] <- median(df$GarageYrBlt, na.rm = TRUE)
-df$GarageCars[is.na(df$GarageCars)]   <- median(df$GarageCars, na.rm = TRUE)
-df$GarageArea[is.na(df$GarageArea)]   <- median(df$GarageArea, na.rm = TRUE)
-df$TotalBsmtSF[is.na(df$TotalBsmtSF)] <- median(df$TotalBsmtSF, na.rm = TRUE)
-df$BsmtFinSF1[is.na(df$BsmtFinSF1)]   <- median(df$BsmtFinSF1, na.rm = TRUE)
-df$BsmtFinSF2[is.na(df$BsmtFinSF2)]   <- median(df$BsmtFinSF2, na.rm = TRUE)
-df$BsmtUnfSF[is.na(df$BsmtUnfSF)]     <- median(df$BsmtUnfSF, na.rm = TRUE)
 df$MasVnrArea[is.na(df$MasVnrArea)]   <- median(df$MasVnrArea, na.rm = TRUE)
 
 # Cek apakah masih ada missing value
-colSums(is.na(df))
+colSums(is.na(df)) 
+
+# Semua variabel ordinal dan numerik sudah tidak memiliki NA
 
 ```
+Tersisa variabel Alley, GarageType, dan MiscFeature yang masih memiliki nilai NA. NA di variabel-variabel ini berarti tidak memiliki gang, tidak memiliki garasi, dan tidak memiliki fitur tambahan. Diperlukan pengisian NA sebagai 'None'
+```{r}
+df$Alley[is.na(df$Alley)] <- "NoAlley"
+df$MasVnrType[is.na(df$MasVnrType)] <- "None"
+df$GarageType[is.na(df$GarageType)] <- "None"
+df$MiscFeature[is.na(df$MiscFeature)]   <- "None"
 
+# Cek apakah masih ada missing value
+colSums(is.na(df)) 
+```
 
 
 # Bagian 2: Seleksi Variabel dengan Uji Statistik
@@ -453,10 +458,10 @@ df_model <- data.frame(
   GarageCars      = df$GarageCars,
   Fireplaces      = df$Fireplaces,
   FullBath        = df$FullBath,
-  ExterQual_num   = df$ExterQual_num,
-  KitchenQual_num = df$KitchenQual_num,
-  BsmtQual_num    = df$BsmtQual_num,
-  CentralAir_num  = df$CentralAir_num
+  ExterQual  = df$ExterQual,
+  KitchenQual = df$KitchenQual,
+  BsmtQual    = df$BsmtQual,
+  CentralAir  = df$CentralAir
 )
 
 # Hapus baris yang masih ada NA
