@@ -288,7 +288,7 @@ Untuk variabel kategorik nominal, korelasi tidak bisa digunakan karena nilainya 
 - **H₀**: semua grup memiliki distribusi harga yang sama
 - Jika **p-value < 0.05**, tolak H₀ → variabel ini berpengaruh terhadap harga
 
-Selain p-value, kita juga hitung **Eta-squared (η²)** sebagai ukuran *effect size*: seberapa besar pengaruh variabel tersebut secara praktis (bukan hanya statistik).
+Selain p-value, kita juga hitung **Epsilon-squared (ε²)** sebagai ukuran *effect size*: seberapa besar pengaruh variabel tersebut secara praktis (bukan hanya statistik).
 
 ```{r kruskal-wallis}
 # Hitung Kruskal-Wallis dan effect size untuk semua variabel kategorik
@@ -300,17 +300,17 @@ for (v in var_kategorik) {
 
   k    <- length(unique(df[[v]][idx]))
   n    <- sum(idx)
-  eta2 <- (kw$statistic - k + 1) / (n - k)
+  epsilon2 <- (kw$statistic - k + 1) / (n - k)
 
   kw_df <- rbind(kw_df, data.frame(
     Variabel    = v,
     Pvalue      = kw$p.value,
-    EtaSquared  = round(as.numeric(eta2), 4)
+    EpsilonSquared  = round(as.numeric(epsilon2), 4)
   ))
 }
 
-# Urutkan berdasarkan Eta-squared (effect size terbesar = paling berpengaruh)
-kw_df <- kw_df[order(-kw_df$EtaSquared), ]
+# Urutkan berdasarkan Epsilon-squared (effect size terbesar = paling berpengaruh)
+kw_df <- kw_df[order(-kw_df$EpsilonSquared), ]
 rownames(kw_df) <- NULL
 
 print(kw_df)
@@ -324,7 +324,7 @@ print(var_kat_terpilih)
 cat("\nTotal:", length(var_kat_terpilih), "variabel\n")
 ```
 
-Berdasarkan hasil di atas, variabel dengan **Eta-squared terbesar** adalah yang paling berpengaruh terhadap harga. Sesuai data teman, variabel seperti `Neighborhood` (η² ≈ 0.55), `Foundation` (η² ≈ 0.26), `GarageType` (η² ≈ 0.25), dan `MSSubClass` (η² ≈ 0.25) memiliki pengaruh yang besar dan signifikan.
+Berdasarkan hasil di atas, variabel dengan **Epsilon-squared terbesar** adalah yang paling berpengaruh terhadap harga. Sesuai data teman, variabel seperti `Neighborhood` (ε² ≈ 0.55), `Foundation` (ε² ≈ 0.26), `GarageType` (ε² ≈ 0.25), dan `MSSubClass` (ε² ≈ 0.25) memiliki pengaruh yang besar dan signifikan.
 
 ## 2.3 Ringkasan Variabel Terpilih untuk Eksplorasi
 
@@ -353,8 +353,8 @@ for (v in var_eksplorasi_kat) {
   kw  <- kruskal.test(df$SalePrice[idx] ~ factor(df[[v]][idx]))
   k   <- length(unique(df[[v]][idx]))
   n   <- sum(idx)
-  eta2 <- (kw$statistic - k + 1) / (n - k)
-  cat(sprintf("  %-20s p = %.2e | eta2 = %.3f\n", v, kw$p.value, eta2))
+  eps2 <- (kw$statistic - k + 1) / (n - k)
+  cat(sprintf("  %-20s p = %.2e | eps2 = %.3f\n", v, kw$p.value, eps2))
 }
 ```
 
@@ -399,15 +399,15 @@ par(mfrow = c(1, 1))
 ```{r uji-overallqual}
 kw_oq  <- kruskal.test(SalePrice ~ OverallQual, data = df)
 k_oq   <- length(unique(df$OverallQual))
-eta2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
+eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
 
 cat("Kruskal-Wallis Test - OverallQual vs SalePrice:\n")
 cat("  p-value     :", format(kw_oq$p.value, scientific = TRUE), "\n")
 cat("  Kesimpulan  :", ifelse(kw_oq$p.value < 0.05, "Signifikan (tolak H0)", "Tidak signifikan"), "\n")
-cat("  Eta-squared :", round(eta2_oq, 3), "(0.01=kecil, 0.06=sedang, 0.14=besar)\n")
+cat("  Epsilon-squared :", round(eps2_oq, 3), "(0.01=kecil, 0.08 =sedang, 0.26=besar)\n")
 ```
 
-Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas sangat signifikan. Effect size Eta-squared yang besar mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis. Dari boxplot terlihat pola jelas: semakin tinggi kualitas, semakin tinggi pula harga rumah.
+Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas sangat signifikan. Effect size Epsilon-squared yang besar mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis. Dari boxplot terlihat pola jelas: semakin tinggi kualitas, semakin tinggi pula harga rumah.
 
 
 Ada hubungan positif yang kuat antara luas area tinggal dan harga. Terlihat juga beberapa outlier — rumah yang sangat luas tapi harganya tidak proporsional, kemungkinan karena kualitas rendah atau kondisi khusus. `GrLivArea` saja hanya menjelaskan sebagian variasi harga — masih ada faktor lain yang perlu diperhitungkan.
