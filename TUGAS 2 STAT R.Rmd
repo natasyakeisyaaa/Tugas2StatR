@@ -1,0 +1,92 @@
+---
+title: "TUGAS 2 STAT R"
+author: "Felice Owen"
+date: "2026-06-04"
+output: html_document
+---
+
+```{r setup}
+housePrices <- read.csv("C:/Users/Lenovo/Downloads/TUGAS 2 INFERENSI DAN REGRESI (2)/House Prices.csv", sep = ',')
+```
+
+```{r read}
+housePrices
+```
+
+```{r kolomNA}
+#1. 
+colSums(is.na(housePrices))[colSums(is.na(housePrices)) > 0]
+```
+```{r}
+library(dplyr)
+housePrices$Alley[is.na(housePrices$Alley)] <- "NoAlley"
+
+housePrices$LandContour <- dplyr::recode(
+  housePrices$LandContour,
+  "Low" = 1,
+  "HLS" = 2,
+  "Bnk" = 3,
+  "Lvl" = 4
+)
+
+housePrices$LotShape <- dplyr::recode(
+  housePrices$LotShape,
+  "IR3" = 1,
+  "IR2" = 2,
+  "IR1" = 3,
+  "Reg" = 4
+)
+
+housePrices$LandSlope <- dplyr::recode(
+  housePrices$LandSlope,
+  "Gtl" = 3,
+  "Mod" = 2,
+  "Sev" = 1,
+)
+
+housePrices$ExterQual <- dplyr::recode(
+  housePrices$ExterQual,
+  "Po" = 1,
+  "Fa" = 2,
+  "TA" = 3,
+  "Gd" = 4,
+  "Ex" = 5
+)
+
+housePrices$ExterCond <- dplyr::recode(
+  housePrices$ExterCond,
+  "Po" = 1,
+  "Fa" = 2,
+  "TA" = 3,
+  "Gd" = 4,
+  "Ex" = 5
+)
+
+housePrices
+```
+
+
+```{r}
+#Memfaktorkan variabel kategorikal 
+
+library(ggplot2)
+kolom_factor <- c(
+"MSSubClass","MSZoning","Street","Alley","LotShape",
+"LandContour","Utilities","LotConfig","LandSlope",
+"Neighborhood","Condition1","Condition2","BldgType",
+"HouseStyle","RoofStyle","RoofMatl","Exterior1st",
+"Exterior2nd","MasVnrType","ExterQual","ExterCond",
+"Foundation"
+)
+
+for(i in kolom_factor){
+   housePrices[[i]] <- as.factor(housePrices[[i]])
+}
+```
+
+```{r, hubungan1}
+#Hubungan landslope dengan lotshape
+
+cor.test(housePrices$LandSlope, housePrices$LotShape, method = "spearman")
+```
+
