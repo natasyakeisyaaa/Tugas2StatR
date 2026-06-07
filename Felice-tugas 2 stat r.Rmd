@@ -1,0 +1,234 @@
+---
+title: "TUGAS 2 STAT R"
+author: "Felice Owen"
+date: "2026-06-04"
+output: html_document
+---
+
+```{r setup}
+library(ggplot2)
+library(dplyr)
+library(car)
+housePrices <- read.csv("C:/Users/Lenovo/Downloads/TUGAS 2 INFERENSI DAN REGRESI (2)/House Prices.csv", sep = ',')
+```
+
+```{r read}
+head(housePrices)
+```
+
+```{r kolomNA}
+#1. 
+colSums(is.na(housePrices))[colSums(is.na(housePrices)) > 0]
+```
+
+```{r}
+library(dplyr)
+housePrices$Alley[is.na(housePrices$Alley)] <- "NoAlley"
+housePrices$MasVnrType[is.na(housePrices$MasVnrType)] <- "None"
+housePrices$LandContour <- dplyr::recode(
+  housePrices$LandContour,
+  "Low" = 1,
+  "HLS" = 2,
+  "Bnk" = 3,
+  "Lvl" = 4
+)
+
+housePrices$LotShape <- dplyr::recode(
+  housePrices$LotShape,
+  "IR3" = 1,
+  "IR2" = 2,
+  "IR1" = 3,
+  "Reg" = 4
+)
+
+housePrices$LandSlope <- dplyr::recode(
+  housePrices$LandSlope,
+  "Gtl" = 3,
+  "Mod" = 2,
+  "Sev" = 1,
+)
+
+housePrices$ExterQual <- dplyr::recode(
+  housePrices$ExterQual,
+  "Po" = 1,
+  "Fa" = 2,
+  "TA" = 3,
+  "Gd" = 4,
+  "Ex" = 5
+)
+
+housePrices$ExterCond <- dplyr::recode(
+  housePrices$ExterCond,
+  "Po" = 1,
+  "Fa" = 2,
+  "TA" = 3,
+  "Gd" = 4,
+  "Ex" = 5
+)
+
+housePrices$LotFrontage[is.na(housePrices$LotFrontage)] = median(housePrices$LotFrontage, na.rm = TRUE)
+
+housePrices$MasVnrArea[is.na(housePrices$MasVnrArea)] = median(housePrices$MasVnrArea, na.rm = TRUE)
+
+housePrices$GarageYrBlt[is.na(housePrices$GarageYrBlt)] = median(housePrices$GarageYrBlt, na.rm = TRUE)
+
+# Kelompok Basement: NA = tidak punya basement, isi "None"
+housePrices$BsmtQual[is.na(housePrices$BsmtQual)]         <- "None"
+housePrices$BsmtCond[is.na(housePrices$BsmtCond)]         <- "None"
+housePrices$BsmtExposure[is.na(housePrices$BsmtExposure)] <- "None"
+housePrices$BsmtFinType1[is.na(housePrices$BsmtFinType1)] <- "None"
+housePrices$BsmtFinType2[is.na(housePrices$BsmtFinType2)] <- "None"
+
+# Kelompok Garasi: NA = tidak punya garasi, isi "None"
+housePrices$GarageType[is.na(housePrices$GarageType)]     <- "None"
+housePrices$GarageFinish[is.na(housePrices$GarageFinish)] <- "None"
+housePrices$GarageQual[is.na(housePrices$GarageQual)]     <- "None"
+housePrices$GarageCond[is.na(housePrices$GarageCond)]     <- "None"
+
+# Fitur opsional: NA = tidak punya → isi "None"
+housePrices$FireplaceQu[is.na(housePrices$FireplaceQu)]   <- "None"
+housePrices$PoolQC[is.na(housePrices$PoolQC)]             <- "None"
+housePrices$Fence[is.na(housePrices$Fence)]               <- "None"
+housePrices$MiscFeature[is.na(housePrices$MiscFeature)]   <- "None"
+
+# Electrical: hanya 1 NA = data hilang isi dengan modus
+modus_electrical <- names(sort(table(housePrices$Electrical), decreasing = TRUE))[1]
+housePrices$Electrical[is.na(housePrices$Electrical)]     <- modus_electrical
+housePrices
+```
+
+
+```{r}
+# fungsi 
+ubah_kualitas <- function(x) {
+  urutan <- c("Po", "Fa", "TA", "Gd", "Ex")
+  hasil  <- match(x, urutan)       # Po=1, Fa=2, TA=3, Gd=4, Ex=5
+  hasil[is.na(hasil)] <- 0         # NA (tidak ada fitur) = 0
+  return(hasil)
+}
+
+#variabel kualitas
+
+housePrices$BsmtQual_num    <- ubah_kualitas(housePrices$BsmtQual)
+housePrices$BsmtCond_num    <- ubah_kualitas(housePrices$BsmtCond)
+housePrices$HeatingQC_num   <- ubah_kualitas(housePrices$HeatingQC)
+housePrices$KitchenQual_num <- ubah_kualitas(housePrices$KitchenQual)
+housePrices$FireplaceQu_num <- ubah_kualitas(housePrices$FireplaceQu)
+housePrices$GarageQual_num  <- ubah_kualitas(housePrices$GarageQual)
+housePrices$GarageCond_num  <- ubah_kualitas(housePrices$GarageCond)
+
+#variabel dengan skala berbeda yang punya skala berbeda, buat fungsi sendiri
+ubah_exposure <- function(x) {
+  urutan <- c("No", "Mn", "Av", "Gd")   # No=1, Mn=2, Av=3, Gd=4
+  hasil  <- match(x, urutan)
+  hasil[is.na(hasil)] <- 0
+  return(hasil)
+}
+housePrices$BsmtExposure_num <- ubah_exposure(housePrices$BsmtExposure)
+
+ubah_finish <- function(x) {
+  urutan <- c("Unf", "RFn", "Fin")      # Unf=1, RFn=2, Fin=3
+  hasil  <- match(x, urutan)
+  hasil[is.na(hasil)] <- 0
+  return(hasil)
+}
+housePrices$GarageFinish_num <- ubah_finish(housePrices$GarageFinish)
+
+housePrices$CentralAir_num <- as.integer(housePrices$CentralAir == "Y")
+
+# Cek hasilnya
+table(housePrices$CentralAir, housePrices$CentralAir_num)
+#    0    1
+# N  XX   0
+# Y   0  XX
+
+ubah_paved <- function(x) {
+  urutan <- c("N", "P", "Y")            # N=1, P=2, Y=3... tapi kita mau N=0
+  hasil  <- match(x, urutan) - 1        # kurangi 1 supaya N=0, P=1, Y=2
+  return(hasil)
+}
+housePrices$PavedDrive_num <- ubah_paved(housePrices$PavedDrive)
+```
+
+```{r}
+hist(housePrices$SalePrice)
+```
+Berdasarkan histogram tersebut, dapat dilihat bahwa harga rumah tidak berdistribusi secara normal, melainkan lebih condong ke kiri. Maka, untuk mencari hubungan antara variabel dengan harga rumah akan digunakan kruskal-wallis  
+
+```{r}
+#Memfaktorkan variabel kategorikal, agar dapat diproses dalam analisis
+
+library(ggplot2)
+kolom_factor <- c(
+"MSSubClass","MSZoning","Street","Alley","Utilities","LotConfig",
+"Neighborhood","Condition1","Condition2","BldgType",
+"HouseStyle","RoofStyle","RoofMatl","Exterior1st",
+"Exterior2nd","MasVnrType","Foundation","Heating","CentralAir","Electrical","GarageType","MiscFeature","SaleType","SaleCondition")
+
+for(i in kolom_factor){
+   housePrices[[i]] <- as.factor(housePrices[[i]])
+}
+```
+
+Pada tahap ini dilakukan uji Kruskal-Wallis untuk menguji apakah terdapat perbedaan signifikan pada harga rumah (SalePrice) antar kategori pada masing-masing variabel.
+
+Uji ini dipilih karena berdasarkan histogram harga rumah sebelumnya didapatkan distribusi tidak normal.Lalu, dihitung juga nilai Epsilon Squared sebagai ukuran effect size untuk mengetahui seberapa besar pengaruh masing-masing variabel terhadap variasi harga rumah. Semakin besar nilai Epsilon Squared, semakin kuat pengaruh variabel tersebut.
+
+```{r}
+hasil_kw <- data.frame()
+
+for(col in kolom_factor){
+
+  test <- kruskal.test(as.formula(paste("SalePrice ~", col)),
+                       data = housePrices)
+
+  n <- nrow(housePrices)
+  k <- length(unique(housePrices[[col]]))
+
+  epsilon_sq <- (as.numeric(test$statistic) - k + 1) / (n - k)
+
+  hasil_kw <- rbind(hasil_kw, data.frame(
+    Variabel = col,
+    Pvalue = test$p.value,
+    EpsilonSquared = epsilon_sq
+  ))
+}
+
+hasil_kw
+hasil_signifikan_kw <- hasil_kw[
+  (hasil_kw$Pvalue < 0.05) &
+  (hasil_kw$EpsilonSquared > 0.26),
+]
+
+hasil_signifikan_kw
+```
+Variabel-variabel yang dipilih adalah variabel-variabel yang memiliki pengaruh signifikan terhadap harga rumah berdasarkan dua kriteria utama, yaitu p-value < 0.05 dan Epsilon Squared > 0.26. Kombinasi ini digunakan untuk memastikan bahwa variabel tidak hanya signifikan, tetapi juga memiliki pengaruh yang kuat. Didapatlah empat variabel yang berpengaruh dan signifikan yaitu, MSSubClass, Neighborhood, Foundation, GarageType.
+
+
+Kemudian, akan dibangun model regresi linear untuk mengetahui pengaruh masing-masing variabel dan akan dilakukan evaluasi menggunakan VIF untuk mengetahui adanya multikolinearitas antar variabel. Nilai VIF yang rendah menunjukkan bahwa tidak terdapat hubungan antar variabel, sehingga model lebih stabil.
+```{r}
+fitur_final <- c(
+  "Neighborhood",
+  "GarageType",
+  "MSSubClass",
+  "Foundation"
+)
+
+data_model <- housePrices[, c(fitur_final, "SalePrice")]
+for(i in fitur_final){
+  data_model[[i]] <- as.factor(data_model[[i]])
+}
+model_check <- lm(SalePrice ~ ., data = data_model)
+
+model_final <- lm(SalePrice ~ ., data = data_model)
+
+summary(model_final)
+library(car)
+
+vif(model_final)
+```
+Secara keseluruhan, proses analisis mencakup seleksi fitur menggunakan uji Kruskal-Wallis, pemilihan variabel berdasarkan effect size, serta pemodelan
+menggunakan regresi linear. Hasil akhir menunjukkan bahwa variabel seperti
+Neighborhood, GarageType, MSSubClass, dan Foundation merupakan faktor utama
+yang mempengaruhi harga rumah.
+
