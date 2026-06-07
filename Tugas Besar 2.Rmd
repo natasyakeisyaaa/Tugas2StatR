@@ -193,8 +193,8 @@ par(mfrow = c(1, 1))
 ```{r imputasi-numerik}
 # Isi missing value dengan median untuk semua variabel numerik yang perlu
 var_imputasi <- c("LotFrontage", "GarageYrBlt", "GarageCars",
-                  "GarageArea", "TotalBsmtSF", "BsmtFinSF1_num",
-                  "BsmtFinSF2_num", "BsmtUnfSF", "MasVnrArea")
+                  "GarageArea", "TotalBsmtSF", "BsmtFinSF1",
+                  "BsmtFinSF2", "BsmtUnfSF", "MasVnrArea")
 
 # Imputasi missing value dengan median
 df$LotFrontage[is.na(df$LotFrontage)] <- median(df$LotFrontage, na.rm = TRUE)
@@ -333,7 +333,7 @@ Dari seleksi di atas, kita fokus eksplorasi mendalam pada variabel-variabel beri
 # Variabel numerik untuk eksplorasi mendalam
 var_eksplorasi_num <- c("OverallQual", "GrLivArea", "TotalBsmtSF", "YearBuilt",
                         "GarageCars", "Fireplaces", "FullBath",
-                        "ExterQual_num", "KitchenQual_num", "BsmtQual_num")
+                        "ExterQual", "KitchenQual", "BsmtQual")
 
 # Variabel kategorik untuk eksplorasi mendalam
 var_eksplorasi_kat <- c("Neighborhood", "CentralAir",
