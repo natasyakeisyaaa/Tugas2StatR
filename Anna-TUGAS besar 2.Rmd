@@ -1,0 +1,114 @@
+---
+title: "Tugas 2"
+author: "Audrianna"
+date: "2026-06-04"
+output: html_document
+---
+
+#Membaca Data Set
+```{r setup, include=FALSE}
+
+library(dplyr)
+
+#baca data set
+df <- read.csv("House Prices.csv", sep = ',')
+```
+
+```{r}
+#melihat data 
+df(house)
+```
+
+#1. Mengubah Tipe Data
+
+#Melakukan visualisasi - Ver Anna 1
+```{r}
+library(ggplot2)
+
+#daftar atribut
+vars <- c("BsmtQual", "BsmtCond", "BsmtExposure", "BsmtFinType1", "BsmtFinType2", "Heating",  "HeatingQC", "CentralAir", "Electrical", "KitchenQual", "Functional", "FireplaceQu", "GarageType", "GarageFinish", "GarageQual", "GarageCond", "PavedDrive", "PoolQC", "Fence", "MiscFeature", "SaleType", "SaleCondition")
+
+for(col in vars){
+  p <- ggplot(house, aes_string(x = col)) +
+       geom_bar(fill = "blue") +
+       ggtitle(col)
+
+  print(p)
+}
+
+```
+
+
+# 1. Pendahuluan
+Variabel terbagi menjadi 3 jenis:
+- Numeri Kontinu: Angka yang bisa bernilai berapa saja (Luas rumah, harga)
+- Numerik diskrit: Angka bulat terhitung (Jumlah kamar mandi)
+- Kategorik nominal: Kategori tanpa urutan (Jenis atap, nama kelurahan)
+- Kategorik ordinal: Kategori dengan urutan bermakna (Poor < Fair < Good < Excellent)
+
+
+## 2.2 Pemisahan Variabel Numerik dan Kategorikal
+- Variabel numerik menyimpan angka kontinu atau diskrit yang bisa langsung dihitung rata-rata/median-nya. 
+- Variabel kategorikal menyimpan label/grup. 
+- Variabel ordinal yang punya urutan bermakna (misalnya: Poor < Fair < Average < Good < Excellent).
+
+```{r tipe-data}
+# cooba beberapa Variabel yang akan digunakan 
+var_numerik <- c("OverallQual", "GrLivArea", "TotalBsmtSF", "YearBuilt", "GarageCars", "Fireplaces", "FullBath", "SalePrice")
+
+var_ordinal <- c("ExterQual", "BsmtQual", "KitchenQual")
+
+var_kategorik <- c("Neighborhood", "CentralAir")
+
+#gabung semua
+vars_semua <- c(var_numerik, var_ordinal, var_kategorik)
+df_sub <- df[, vars_semua]
+
+str(df_sub)
+```
+
+```{r}
+# Daftar variabel numerik (angka murni)
+var_numerik <- c("LotFrontage", "LotArea", "OverallQual", "OverallCond",
+                 "YearBuilt", "YearRemodAdd", "MasVnrArea",
+                 "BsmtFinSF1", "BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF",
+                 "X1stFlrSF", "X2ndFlrSF", "GrLivArea",
+                 "FullBath", "HalfBath", "BedroomAbvGr",
+                 "TotRmsAbvGrd", "Fireplaces",
+                 "GarageYrBlt", "GarageCars", "GarageArea",
+                 "WoodDeckSF", "OpenPorchSF", "PoolArea", "MoSold", "YrSold")
+
+# Daftar variabel kategorik ordinal (punya urutan: Poor -> Excellent)
+# Ini yang akan kita ubah menjadi angka
+var_ordinal <- c("ExterQual", "ExterCond", "BsmtQual", "BsmtCond",
+                 "BsmtExposure", "BsmtFinType1", "BsmtFinType2",
+                 "HeatingQC", "KitchenQual", "FireplaceQu",
+                 "GarageFinish", "GarageQual", "GarageCond",
+                 "PoolQC", "Fence")
+
+# Daftar variabel kategorik nominal (tidak punya urutan)
+var_kategorik <- c("MSZoning", "Street", "Alley", "LotShape", "LandContour",
+                   "Utilities", "LotConfig", "LandSlope", "Neighborhood",
+                   "Condition1", "Condition2", "BldgType", "HouseStyle",
+                   "RoofStyle", "RoofMatl", "Exterior1st", "Exterior2nd",
+                   "MasVnrType", "Foundation", "Heating", "CentralAir",
+                   "Electrical", "Functional", "GarageType",
+                   "PavedDrive", "MiscFeature", "SaleType", "SaleCondition")
+
+cat("Jumlah variabel numerik  :", length(var_numerik), "\n")
+cat("Jumlah variabel ordinal  :", length(var_ordinal), "\n")
+cat("Jumlah variabel kategorik:", length(var_kategorik), "\n")
+```
+
+
+#Caria misiing value
+Strategi:
+- Median: digunakan ketika distribusi data menjulur (skewed) atau ada pencilan ekstrem. Median lebih robust karena tidak terpengaruh outlier.  
+- Mean: digunakan ketika distribusi mendekati normal/simetris.  
+- Kategori khusus: untuk variabel ordinal/kategorikal, `NA` sering bermakna "tidak ada" (misalnya `BsmtQual = NA` artinya tidak ada basement), sehingga diberi kategori `"None"`.
+
+```{r cek-missing}
+# Cek missing value pada variabel pilihan
+mv <- colSums(is.na(df_sub))
+mv[mv > 0]
+```
