@@ -207,7 +207,8 @@ colSums(is.na(df))
 # Semua variabel ordinal dan numerik sudah tidak memiliki NA
 
 ```
-Tersisa variabel Alley, GarageType, Electrical, MasVnrType, dan MiscFeature yang masih memiliki nilai NA. NA di variabel-variabel ini berarti tidak memiliki gang, tidak memiliki garasi, dan tidak memiliki fitur tambahan. Diperlukan pengisian NA sebagai 'None'
+
+Tersisa variabel `Alley`, `GarageType`, `Electrical`, `MasVnrType`, dan `MiscFeature` yang masih memiliki nilai NA. NA di variabel-variabel ini berarti tidak memiliki gang, tidak memiliki garasi, data tidak ditemukan, dan tidak memiliki fitur tambahan. Diperlukan pengisian NA sebagai 'None' atau mengisi data dengan hal yang umum (untuk Electrical pada rumah-rumah)
 ```{r}
 df$Alley[is.na(df$Alley)] <- "NoAlley"
 df$MasVnrType[is.na(df$MasVnrType)] <- "None"
@@ -437,9 +438,23 @@ abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
 legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
 ```
 
-```
 
 ## 3.6 CentralAir — AC Sentral
+```{r eksplorasi-central air, fig.width=11, fig.height=5}
+med_centralAir   <- tapply(df$SalePrice, df$CentralAir, median)
+df$CentralAir_f <- factor(df$CentralAir, levels = neigh_centralAir)
+
+boxplot(SalePrice ~ CentralAir_f, data = df,
+        las      = 2,
+        col      = "lightsteelblue",
+        main     = "Harga Rumah berdasarkan ada tidaknya Central Air",
+        xlab     = "",
+        ylab     = "Sale Price ($)",
+        cex.axis = 0.6,
+        outline  = FALSE)
+abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
+legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
+```
 
 
 ---
@@ -495,5 +510,4 @@ cat("Test set          :", nrow(test),  "baris (20%)\n")
 
 
 ## 5.3 Ringkasan Temuan
-
 
