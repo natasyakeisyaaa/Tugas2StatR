@@ -842,10 +842,28 @@ model2 <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
              data = train)
 summary(model2)
 ```
+Lakukan backward elimination untuk mengeliminasi variabel yang kurang sesuai sebagai prediktor
+```{r}
+#backward elimination variabel centralAir
+model2a <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
+               YearBuilt + GarageCars + ExterQual +
+               KitchenQual + BsmtQual + FullBath + Fireplaces,
+             data = train)
+summary(model2a)
+
+#backward elimination variabel FullBath
+model2b <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
+               YearBuilt + GarageCars + ExterQual +
+               KitchenQual + BsmtQual + Fireplaces,
+             data = train)
+summary(model2b)
+```
+
+Metode backward elimination digunakan untuk menyederhanakan model dengan menghapus variabel yang tidak signifikan terhadap prediksi harga rumah. Pada setiap tahap, jika nilai p-value suatu variable melebihi tingkat signifikansi yang ditetapkan (α = 0,05), maka variabel tersebut dianggap tidak signifikan dan dihapus dari model. Proses ini dilakukan secara iteratif hingga seluruh variabel yang tersisa memiliki kontribusi yang signifikan terhadap model.
 
 ```{r model2-evaluasi}
 # Prediksi dan evaluasi Model 2 pada data test
-pred2_test <- predict(model2, newdata = test)
+pred2_test <- predict(model2b, newdata = test)
 
 rmse2   <- hitung_rmse(test$SalePrice, pred2_test)
 r2_2    <- summary(model2)$r.squared
@@ -871,14 +889,14 @@ Lakukan backward elimination untuk membuang variabel yang kurnag tepat sebagai p
 ```{r}
 # Buang variabel dengan p-value tertinggi
 # Foundation dipilih karena seluruh kategorinya memiliki nilai p-value di atas 0.05
-model3 <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + GarageType, data = train)
-summary(model3)
+model3a <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + GarageType, data = train)
+summary(model3a)
 ```
 Setelah dilakukan backward elimination terhadap variabel Foundation, p-value yang dihasilkan tidak signifikan dan hasil R-squared yang didapat berkurang hanya 0.0014. Maka Foundation dapat dieliminasi sebagai prediktor harga rumah.
 
 ```{r model3-evaluasi}
 # Prediksi dan evaluasi Model 3 pada data test
-pred3_test <- predict(model3, newdata = test)
+pred3_test <- predict(model3a, newdata = test)
 
 rmse3   <- hitung_rmse(test$SalePrice, pred3_test)
 r3_3    <- summary(model3)$r.squared
