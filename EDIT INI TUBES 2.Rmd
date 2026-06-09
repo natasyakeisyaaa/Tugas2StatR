@@ -287,6 +287,29 @@ Interpretasi ε²:
 - ε² ≈ 0.08 : efek sedang
 - ε² ≥ 0.26 : efek besar
 
+```{r}
+# Hitung Kruskal-Wallis untuk semua variabel kategorik
+var_kategorik_cek <- var_kategorik  # dari definisi sebelumnya
+n <- nrow(df)
+hasil_kw <- data.frame(Variabel = character(),
+                       Pvalue = numeric(),
+                       EpsilonSquared = numeric(),
+                       stringsAsFactors = FALSE)
+
+for (v in var_kategorik_cek) {
+  # Buang NA jika ada (meskipun sudah diimputasi)
+  data_clean <- df[!is.na(df[[v]]), ]
+  kw_test <- kruskal.test(SalePrice ~ get(v), data = data_clean)
+  k <- length(unique(data_clean[[v]]))
+  eps2 <- (kw_test$statistic - k + 1) / (n - k)
+  hasil_kw <- rbind(hasil_kw, data.frame(Variabel = v,
+                                         Pvalue = kw_test$p.value,
+                                         EpsilonSquared = eps2))
+}
+kw_df <- hasil_kw[order(hasil_kw$EpsilonSquared, decreasing = TRUE), ]
+```
+
+
 ```{r plot-epsilon, fig.height=7}
 # Visualisasi effect size tiap variabel kategorik
 # mencari variabel signifikan (p<0.05) tapi efeknya kecil
@@ -337,7 +360,7 @@ var_eksplorasi_num <- c("OverallQual", "GrLivArea", "TotalBsmtSF",
 # Ambil 4 teratas berdasarkan epsilon-squared
 var_eksplorasi_kat <- head(var_kat_terpilih, 4)
 
-cat("=== VARIABEL UNTUK EKSPLORASI MENDALAM ===\n\n")
+cat("=== VARIABEL UNTUK EKSPLORASI ===\n\n")
 cat("Numerik/Ordinal:\n")
 for (v in var_eksplorasi_num) {
   rho <- cor(df[[v]], df$SalePrice, method = "spearman", use = "complete.obs")
@@ -410,7 +433,7 @@ boxplot(SalePrice ~ OverallQual, data = df,
 abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
 ```
 
-```{r uji-overallqual}
+```{r}
 kw_oq  <- kruskal.test(SalePrice ~ OverallQual, data = df)
 k_oq   <- length(unique(df$OverallQual))
 eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
@@ -425,7 +448,7 @@ eps2_oq
 ## 3.3 GrLivArea — Luas Area Tinggal
 GrLivArea` adalah luas area tinggal di atas tanah dalam satuan sqft. Hubungannya dengan harga dieksplorasi menggunakan scatter plot dan regresi linear sederhana.
 
-```{r eksplorasi-grlivarea, fig.height=5}
+```{r}
 # Scatter plot + garis regresi
 # Alasan scatter plot: GrLivArea adalah variabel kontinu, sehingga scatter plot
 # lebih tepat untuk melihat hubungan antar dua variabel kontinu
@@ -441,7 +464,7 @@ rho_glv <- round(cor(df$GrLivArea, df$SalePrice, method = "spearman"), 3)
 legend("topleft", legend = paste("Spearman rho =", rho_glv), bty = "n")
 ```
 
-```{r slr-grlivarea}
+```{r}
 model_slr <- lm(SalePrice ~ GrLivArea, data = df)
 model_slr
 
@@ -452,7 +475,7 @@ summary(model_slr)
 Ada hubungan positif yang kuat antara luas area tinggal dan harga. Berdasarkan visualisasi terlihat beberapa outlier rumah yang sangat luas tapi harganya tidak proporsional, kemungkinan karena kualitas rendah atau kondisi khusus. `GrLivArea` saja menjelaskan sebagian variasi harga, sehingga dibutuhkan prediktor lain dalam model yang lebih lengkap.
 
 
-```{r uji-overallqual}
+```{r}
 kw_oq  <- kruskal.test(SalePrice ~ OverallQual, data = df)
 k_oq   <- length(unique(df$OverallQual))
 eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
@@ -474,7 +497,7 @@ Rumah yang lebih baru cenderung lebih mahal. Namun korelasinya tidak sekuat `Ove
 ## 3.5 Neighborhood — Lokasi
 `Neighborhood` adalah lokasi fisik rumah di dalam kota Ames. Lokasi adalah salah satu faktor terpenting dalam harga properti.
 
-```{r eksplorasi-neighborhood, fig.width=11, fig.height=5}
+```{r}
 med_neigh   <- tapply(df$SalePrice, df$Neighborhood, median)
 neigh_order <- names(sort(med_neigh))
 df$Neighborhood_f <- factor(df$Neighborhood, levels = neigh_order)
@@ -494,7 +517,7 @@ legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n"
 
 # Bagian 4: Pemodelan Prediksi
 ## 4.1 Persiapan Data
-```{r persiapan-model}
+```{r}
 df_model <- data.frame(
   SalePrice       = df$SalePrice,
   log_SalePrice   = log(df$SalePrice),
