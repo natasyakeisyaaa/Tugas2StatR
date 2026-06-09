@@ -506,6 +506,18 @@ boxplot(SalePrice ~ Neighborhood_f, data = df,
 abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
 legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
 ```
+
+```{r}
+kw_oq  <- kruskal.test(SalePrice ~ Neighborhood, data = df)
+k_oq   <- length(unique(df$Neighborhood))
+eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
+
+cat("Kruskal-Wallis Test - Neighborhood vs SalePrice:\n")
+cat("  p-value     :", format(kw_oq$p.value, scientific = TRUE), "\n")
+cat("  Kesimpulan  :", ifelse(kw_oq$p.value < 0.05, "Signifikan (tolak H0)", "Tidak signifikan"), "\n")
+cat("  Epsilon-squared :", round(eps2_oq, 3), "(0.01=kecil, 0.08 =sedang, 0.26=besar)\n")
+```
+
 **Kesimpulan** Visualisasi menggunakan boxplot yang diurutkan berdasarkan median untuk menunjukan bahwa Neighborhood memiliki pengaruh yang sangat kuat dan terstruktur terhadap harga rumah, dengan kesenjangan median antara kawasan termurah (MeadowV, ~$100.000) dan termahal (NridgHt, ~$315.000) mencapai lebih dari tiga kali lipat. Pola ini dikonfirmasi secara statistik oleh uji Kruskal-Wallis dengan epsilon-squared sebesar 0,589 — tertinggi di antara seluruh variabel kategorik — yang menunjukkan bahwa lokasi geografis bukan sekadar label, melainkan prediktor dominan yang mencerminkan perbedaan nyata dalam nilai properti, aksesibilitas, dan kualitas lingkungan. Variasi lebar IQR antar neighborhood juga mengindikasikan bahwa beberapa kawasan bersifat homogen sementara lainnya heterogen, sehingga pemodelan yang mengabaikan Neighborhood berisiko kehilangan sebagian besar sinyal prediktif yang penting.
 
 
