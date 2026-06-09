@@ -409,12 +409,13 @@ abline(v = mean(log(df$SalePrice)), col = "red", lwd = 2, lty = 2)
 par(mfrow = c(1, 1))
 ```
 
+
 ```{r stat-saleprice}
 #Statistik Deskriptif SalePrice
 summary(df$SalePrice)
 ```
 
-SalePrice berdistribusi **right-skewed** — Mean > Median menunjukkan ada rumah-rumah sangat mahal yang menarik rata-rata ke atas. Log-transformasi membuat distribusi lebih simetris, yang akan berguna saat pemodelan. Oleh karena itu kita menggunakan uji non-parametrik (Kruskal-Wallis, Spearman) karena asumsi normalitas tidak terpenuhi.
+SalePrice berdistribusi **right-skewed** — Mean > Median menunjukkan ada rumah-rumah sangat mahal yang menarik rata-rata ke atas. Log-transformasi membuat distribusi lebih simetris, yang akan berguna saat pemodelan. Oleh karena itu kita menggunakan uji non-parametrik (Kruskal-Wallis, Spearman) karena asumsi normalitas tidak terpenuhi.  Oleh karena itu dilakukan transformasi log(SalePrice) untuk membuat distribusi lebih simetris, mengurangi pengaruh outlier, dan meningkatkan performa model prediksi.
 
 ## 3.2 OverallQual — Kualitas Keseluruhan Rumah
 OverallQual menilai kualitas material dan finishing rumah pada skala 1 (Very Poor) hingga 10 (Very Excellent). Variabel ini memiliki korelasi Spearman tertinggi dari seluruh variabel numerik.
@@ -443,7 +444,73 @@ k_oq
 eps2_oq
 ```
 
-**Kesimpulan** Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas sangat signifikan. Rho yang besar mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis — bukan hanya efek dari ukuran sampel besar.Boxplot menunjukkan pola jelas yaitu semakin tinggi kualitas, semakin tinggi harga rumah.
+**Kesimpulan** Uji Kruskal-Wallis menunjukkan bahwa terdapat perbedaan harga jual yang sangat signifikan antar tingkat kualitas bangunan (H = 966,1; df = 9; p < 0,005), dengan effect size epsilon-squared sebesar 0,66 yang menunjukan bahwa OverallQual memiliki pengaruh praktis yang sangat besar terhadap SalePrice. Terbukti melalui boxplot yang memperlihatkan kenaikan harga yang konsisten dan monoton seiring meningkatnya skor kualitas atau dengan kata lain semakin tinggi kualitas maka semakin tinggi harga ruma. Hal ini menjadikan OverallQual sebagai salah satu prediktor terkuat dalam dataset ini. 
+
+Visualisasi menggunakan boxplot karena OverallQual bersifat diskrit (nilai 1-10). Dnegan boxplot distribusi harga di setiap level kualitas akan ditampilkan. Garis merah putus putus ditambahkan sebagai refrensi median keseluruhan dataset, sehingga mudah melihat grup mana yang beda di atas/bawah rata-rata pasar. 
+
+## 3.3 GrLivArea — Luas Area Tinggal
+GrLivArea` adalah luas area tinggal di atas tanah dalam satuan sqft. Hubungannya dengan harga dieksplorasi menggunakan scatter plot dan regresi linear sederhana.
+
+```{r}
+# Scatter plot + garis regresi
+# Alasan scatter plot: GrLivArea adalah variabel kontinu, sehingga scatter plot
+# lebih tepat untuk melihat hubungan antar dua variabel kontinu
+plot(df$GrLivArea, df$SalePrice,
+     main = "GrLivArea vs SalePrice",
+     xlab = "Luas Area Tinggal (sqft)",
+     ylab = "Sale Price ($)",
+     col  = "steelblue",
+     pch  = 16, cex = 0.5)
+abline(lm(SalePrice ~ GrLivArea, data = df), col = "red", lwd = 2)
+
+rho_glv <- round(cor(df$GrLivArea, df$SalePrice, method = "spearman"), 3)
+legend("topleft", legend = paste("Spearman rho =", rho_glv), bty = "n")
+```
+
+```{r}
+model_slr <- lm(SalePrice ~ GrLivArea, data = df)
+model_slr
+
+summary(model_slr)
+
+```
+
+```{r}
+kw_oq  <- kruskal.test(SalePrice ~ OverallQual, data = df)
+k_oq   <- length(unique(df$OverallQual))
+eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
+
+cat("Kruskal-Wallis Test - OverallQual vs SalePrice:\n")
+cat("  p-value     :", format(kw_oq$p.value, scientific = TRUE), "\n")
+cat("  Kesimpulan  :", ifelse(kw_oq$p.value < 0.05, "Signifikan (tolak H0)", "Tidak signifikan"), "\n")
+cat("  Epsilon-squared :", round(eps2_oq, 3), "(0.01=kecil, 0.08 =sedang, 0.26=besar)\n")
+```
+**Kesimpulan** GrLivArea memiliki korelasi Spearman sebesar 0,731 dengan SalePrice, adaa hubungan positif yang kuat antara luas area tinggal dan harga, artinya semakin luas area tinggal, semakin tinggi harga jual. Model regresi linear sederhana mengestimasi kenaikan harga sekitar $107 per sqft tambahan luas (p < 0,005), dengan R² sebesar 0,50 yang berarti luas area tinggal saja mampu menjelaskan setengah dari variasi harga, namun adanya outlier dan sisa variasi yang belum terjelaskan mengindikasikan bahwa prediktor lain tetap dibutuhkan untuk membangun model yang lebih akurat. Visualisasi menggunakan scatter plot karena GrLivArea adalah variabel kontinu (bukan diskrit), scatter plot dipilih untuk memvisualisasikan hubungan antara dua variabel kontinu secara langsung. Setiap titik mewakili satu rumah, dan pola sebarannya langsung terlihat. Garis merah adalah garis regresi linear sederhana (OLS) yang menunjukkan tren umum hubungan antara luas dan harga. Berdasarkan visualisasi terlihat beberapa outlier rumah yang sangat luas tapi harganya tidak proporsional, kemungkinan karena kualitas rendah atau kondisi khusus. `GrLivArea` saja menjelaskan sebagian variasi harga, sehingga dibutuhkan prediktor lain dalam model yang lebih lengkap.
+
+
+## 3.5 Neighborhood — Lokasi
+`Neighborhood` adalah lokasi fisik rumah di dalam kota Ames. Lokasi adalah salah satu faktor terpenting dalam harga properti.
+```{r}
+med_neigh   <- tapply(df$SalePrice, df$Neighborhood, median)
+neigh_order <- names(sort(med_neigh))
+df$Neighborhood_f <- factor(df$Neighborhood, levels = neigh_order)
+
+boxplot(SalePrice ~ Neighborhood_f, data = df,
+        las      = 2,
+        col      = "lightsteelblue",
+        main     = "Harga Rumah per Neighborhood (diurutkan berdasarkan Median)",
+        xlab     = "",
+        ylab     = "Sale Price ($)",
+        cex.axis = 0.6,
+        outline  = FALSE)
+abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
+legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
+```
+**Kesimpulan** Visualisasi menggunakan boxplot yang diurutkan berdasarkan median untuk menunjukan bahwa Neighborhood memiliki pengaruh yang sangat kuat dan terstruktur terhadap harga rumah, dengan kesenjangan median antara kawasan termurah (MeadowV, ~$100.000) dan termahal (NridgHt, ~$315.000) mencapai lebih dari tiga kali lipat. Pola ini dikonfirmasi secara statistik oleh uji Kruskal-Wallis dengan epsilon-squared sebesar 0,589 — tertinggi di antara seluruh variabel kategorik — yang menunjukkan bahwa lokasi geografis bukan sekadar label, melainkan prediktor dominan yang mencerminkan perbedaan nyata dalam nilai properti, aksesibilitas, dan kualitas lingkungan. Variasi lebar IQR antar neighborhood juga mengindikasikan bahwa beberapa kawasan bersifat homogen sementara lainnya heterogen, sehingga pemodelan yang mengabaikan Neighborhood berisiko kehilangan sebagian besar sinyal prediktif yang penting.
+
+
+Temuan dari eksplorasi menunjukkan bahwa GrLivArea saja hanya mampu menjelaskan 50% variasi harga (R² = 0,50), sementara analisis seleksi variabel di Bagian 2 telah mengidentifikasi 16 prediktor lain yang memiliki korelasi kuat dengan SalePrice. Oleh karena itu, Bagian 4 membangun model regresi berganda yang menggabungkan seluruh variabel terpilih — termasuk OverallQual, kualitas ruangan, luas basement, dan tahun dibangun — untuk mengatasi keterbatasan model tunggal tersebut dan menghasilkan prediksi yang lebih akurat dan komprehensif.
+
 
 ## 3.3 ExterQual — Kualitas material exterior rumah
 ExterQual menilai kualitas material dari exterior rumah dari skala Excellent (Ex), Goog (Gd), Average (TA), Fair (FA), sampai Poor (Po). Variabel ini memiliki korelasi Spearman tertinggi keempat dari seluruh variabel numerik. 
@@ -498,74 +565,6 @@ cor.test(df$YearBuilt, df$SalePrice, method = "spearman")
 ```
 **Kesimpulan** Dari hasil uji diatas, di dapat nilai p-value sangat kecil sehingga dapat disimpulkan bahwa variabel YearBuilt dengan variabel SalePrice memiliki hubungan yang signifikan. Dari effect size, nilai rhonya 0.6526815 dimana berarti terdapat hubungan yang kuat antara tahun dibangun dengan harga rumah.
 
-## 3.5 GrLivArea — Luas Area Tinggal
-GrLivArea` adalah luas area tinggal di atas tanah dalam satuan sqft. Hubungannya dengan harga dieksplorasi menggunakan scatter plot dan regresi linear sederhana.
-
-```{r}
-# Scatter plot + garis regresi
-# Alasan scatter plot: GrLivArea adalah variabel kontinu, sehingga scatter plot
-# lebih tepat untuk melihat hubungan antar dua variabel kontinu
-plot(df$GrLivArea, df$SalePrice,
-     main = "GrLivArea vs SalePrice",
-     xlab = "Luas Area Tinggal (sqft)",
-     ylab = "Sale Price ($)",
-     col  = "steelblue",
-     pch  = 16, cex = 0.5)
-abline(lm(SalePrice ~ GrLivArea, data = df), col = "red", lwd = 2)
-
-rho_glv <- round(cor(df$GrLivArea, df$SalePrice, method = "spearman"), 3)
-legend("topleft", legend = paste("Spearman rho =", rho_glv), bty = "n")
-```
-
-```{r}
-model_slr <- lm(SalePrice ~ GrLivArea, data = df)
-model_slr
-
-summary(model_slr)
-
-```
-
-Ada hubungan positif yang kuat antara luas area tinggal dan harga. Berdasarkan visualisasi terlihat beberapa outlier rumah yang sangat luas tapi harganya tidak proporsional, kemungkinan karena kualitas rendah atau kondisi khusus. `GrLivArea` saja menjelaskan sebagian variasi harga, sehingga dibutuhkan prediktor lain dalam model yang lebih lengkap.
-
-
-```{r}
-kw_oq  <- kruskal.test(SalePrice ~ OverallQual, data = df)
-k_oq   <- length(unique(df$OverallQual))
-eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
-
-cat("Kruskal-Wallis Test - OverallQual vs SalePrice:\n")
-cat("  p-value     :", format(kw_oq$p.value, scientific = TRUE), "\n")
-cat("  Kesimpulan  :", ifelse(kw_oq$p.value < 0.05, "Signifikan (tolak H0)", "Tidak signifikan"), "\n")
-cat("  Epsilon-squared :", round(eps2_oq, 3), "(0.01=kecil, 0.08 =sedang, 0.26=besar)\n")
-```
-
-Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas sangat signifikan. Effect size Epsilon-squared yang besar mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis. Dari boxplot terlihat pola jelas: semakin tinggi kualitas, semakin tinggi pula harga rumah.
-
-
-Ada hubungan positif yang kuat antara luas area tinggal dan harga. Terlihat juga beberapa outlier — rumah yang sangat luas tapi harganya tidak proporsional, kemungkinan karena kualitas rendah atau kondisi khusus. `GrLivArea` saja hanya menjelaskan sebagian variasi harga — masih ada faktor lain yang perlu diperhitungkan.
-
-
-Rumah yang lebih baru cenderung lebih mahal. Namun korelasinya tidak sekuat `OverallQual` — ada rumah lama yang masih mahal jika kualitas dan kondisinya terjaga dengan baik.
-
-## 3.6 Neighborhood — Lokasi
-`Neighborhood` adalah lokasi fisik rumah di dalam kota Ames. Lokasi adalah salah satu faktor terpenting dalam harga properti.
-
-```{r}
-med_neigh   <- tapply(df$SalePrice, df$Neighborhood, median)
-neigh_order <- names(sort(med_neigh))
-df$Neighborhood_f <- factor(df$Neighborhood, levels = neigh_order)
-
-boxplot(SalePrice ~ Neighborhood_f, data = df,
-        las      = 2,
-        col      = "lightsteelblue",
-        main     = "Harga Rumah per Neighborhood (diurutkan berdasarkan Median)",
-        xlab     = "",
-        ylab     = "Sale Price ($)",
-        cex.axis = 0.6,
-        outline  = FALSE)
-abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
-legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
-```
 
 ## 3.7 garageArea - garageCars
 Untuk menganalisis hubungan antara GarageCars dan GarageArea, digunakan uji Kruskal-Wallis karena variabel GarageCars merupakan variabel kategorikal ordinal, sedangkan GarageArea merupakan variabel numerik yang tidak memenuhi distribusi normal. Uji Kruskal-Wallis merupakan alternatif non-parametrik yang digunakan untuk menguji apakah terdapat perbedaan distribusi atau median luas garasi pada masing-masing kategori kapasitas mobil garasi. Selain itu, visualisasi boxplot digunakan untuk melihat pola distribusi data dan perbedaan antar kelompok.
@@ -685,33 +684,132 @@ Hasil uji Kruskal-Wallis menunjukkan nilai χ²(5) = 488.72 dengan p-value < 0.0
 
 Untuk mengukur besarnya pengaruh, dilakukan perhitungan Epsilon-Squared (ε²) dan diperoleh nilai ε² = 0.3327, yang menunjukkan bahwa pengaruh Foundation terhadap SalePrice tergolong besar. Oleh karena itu, jenis fondasi dapat dianggap sebagai salah satu faktor penting yang mempengaruhi harga jual rumah dan layak dipertimbangkan dalam pembangunan model prediksi harga rumah.
 
-
+---
 
 # Bagian 4: Pemodelan Prediksi
-## 4.1 Persiapan Data
-```{r}
+
+Pada bagian ini dibuat beberapa model prediksi SalePrice menggunakan variabel-variabel yang sudah terpilih dari eksplorasi di Bagian 2 dan 3. Tujuannya adalah membandingkan beberapa model dan memilih yang terbaik.
+
+## 4.1 Persiapan Data Model
+Berdasarkan hasil eksplorasi di Bagian 3, ditemukan bahwa **GarageCars dan GarageArea sangat berkorelasi satu sama lain secara makna** dengan (ρ = 0.853, ε² = 0.728). Menggunakan kedua variabel sekaligus berisiko menyebabkan multikolinearitas yang membuat koefisien model tidak stabil (sesuai materi Collinearity). Oleh karena itu, **GarageArea dikeluarkan** dan hanya GarageCars yang dipertahankan karena memiliki korelasi sedikit lebih tinggi dengan SalePrice (rho = 0.691 vs 0.649).
+
+Selain itu, variabel kategorik **MSSubClass dan Foundation** dimasukkan ke model berdasarkan hasil eksplorasi Bagian 3.8 dan 3.9 yang menunjukkan keduanya memiliki effect size besar (ε² = 0.358 dan ε² = 0.333).
+
+```{r persiapan-model}
+# Siapkan dataframe untuk pemodelan
+# GarageArea dikeluarkan karena sangat berkorelasi dengan GarageCars (rho=0.853)
+# MSSubClass dan Foundation dimasukkan karena terbukti berpengaruh besar di eksplorasi
 df_model <- data.frame(
-  SalePrice       = df$SalePrice,
-  log_SalePrice   = log(df$SalePrice),
-  OverallQual     = df$OverallQual,
-  GrLivArea       = df$GrLivArea,
-  TotalBsmtSF     = df$TotalBsmtSF,
-  YearBuilt       = df$YearBuilt,
-  GarageCars      = df$GarageCars,
-  Fireplaces      = df$Fireplaces,
-  FullBath        = df$FullBath,
-  ExterQual  = df$ExterQual,
-  KitchenQual = df$KitchenQual,
-  BsmtQual    = df$BsmtQual,
-  CentralAir  = df$CentralAir
+  SalePrice     = df$SalePrice,
+  log_SalePrice = log(df$SalePrice),  # log SalePrice untuk model transformasi
+  OverallQual   = df$OverallQual,
+  GrLivArea     = df$GrLivArea,
+  TotalBsmtSF   = df$TotalBsmtSF,
+  YearBuilt     = df$YearBuilt,
+  GarageCars    = df$GarageCars,      # dipilih, GarageArea dikeluarkan
+  ExterQual     = df$ExterQual,
+  KitchenQual   = df$KitchenQual,
+  BsmtQual      = df$BsmtQual,
+  FullBath      = df$FullBath,
+  Fireplaces    = df$Fireplaces,
+  CentralAir    = df$CentralAir,
+  MSSubClass    = df$MSSubClass,      # variabel kategorik dari eksplorasi 3.8
+  Foundation    = df$Foundation       # variabel kategorik dari eksplorasi 3.9
 )
 
+cat("Dimensi data model:", nrow(df_model), "baris,", ncol(df_model), "kolom\n")
+cat("Variabel prediktor yang digunakan:\n")
+print(names(df_model)[-(1:2)])  # tampilkan semua kecuali SalePrice dan log_SalePrice
 ```
 
-Variabel KitchenQual, BsmtQual tidak dieksplorasi arena secara makna sudah termasuk ke daalam OverallQual (Kitchen dan Bsmt menilai masing-masing dapur dan basement sedangkan Overall menilai kualitas keseluruhan rumah) meskipun dari nilai rho korelasinya lebih tinggi dibanding variabel-variabel lain yang sudah dieksplorasi. ExterQuall dieksplorasi sebagai pembanding saja.
+## 4.2 Train-Test Split
+Data dibagi menjadi **data latih (train) 80%** dan **data uji (test) 20%**. Model dibangun hanya dari data latih, lalu dievaluasi pada data test yang belum pernah dilihat model untuk menghindari overfitting.
+
+```{r train-test-split}
+set.seed(42)  # agar hasil bisa direproduksi oleh siapapun
+
+n <- nrow(df_model)
+idx_train <- sample(1:n, size = floor(0.8 * n))  # ambil 80% indeks secara acak
+
+train <- df_model[ idx_train, ]   # data latih
+test  <- df_model[-idx_train, ]   # data uji (sisanya)
+
+cat("Jumlah data train:", nrow(train), "\n")
+cat("Jumlah data test :", nrow(test),  "\n")
+```
+
+## 4.3 Fungsi Evaluasi
+Fungsi RMSE disiapkan agar bisa dipakai berulang untuk semua model. RMSE mengukur rata-rata kesalahan prediksi dalam satuan yang sama dengan SalePrice ($).
+
+```{r fungsi-evaluasi}
+# Fungsi RMSE: akar dari rata-rata kuadrat error (sesuai rumus di materi)
+hitung_rmse <- function(aktual, prediksi) {
+  sqrt(mean((aktual - prediksi)^2))
+}
+```
 
 
+## 4.4 Model 1 — Regresi Linear Sederhana
+Model pertama hanya menggunakan **GrLivArea** sebagai satu-satunya prediktor. Ini adalah model paling sederhana yang sudah dibahas di Bagian 3.3, dan dijadikan acuan awal untuk dibandingkan dengan model yang lebih lengkap.
 
-## 4. Perbandingan Model
+```{r model1-slr}
+# Model regresi sederhana: SalePrice ~ GrLivArea
+# Sintaks lm() sesuai materi: lm(target ~ prediktor, data)
+model1 <- lm(SalePrice ~ GrLivArea, data = train)
+summary(model1)
+```
+
+```{r model1-evaluasi}
+# Prediksi pada data test menggunakan predict()
+pred1_test <- predict(model1, newdata = test)
+
+# Hitung metrik evaluasi
+rmse1 <- hitung_rmse(test$SalePrice, pred1_test)
+r2_1 <- summary(model1)$r.squared
+adjr2_1 <- summary(model1)$adj.r.squared
+
+cat("Evaluasi Model 1 (Regresi Sederhana)\n")
+cat("R²          :", round(r2_1,    4), "\n")
+cat("Adjusted R² :", round(adjr2_1, 4), "\n")
+cat("RMSE (test) :", round(rmse1,   0), "\n")
+```
 
 ---
+
+## 4.5 Model 2 — Regresi Linear Berganda
+Model kedua menggunakan **semua variabel numerik terpilih** dari Bagian 2 dan 3 (tanpa GarageArea karena kolinear dengan GarageCars). Regresi berganda memungkinkan setiap prediktor "mengontrol" pengaruh variabel lain.
+
+```{r model2-mlr}
+# Model regresi berganda dengan variabel numerik/ordinal terpilih
+# GarageArea tidak dimasukkan karena sangat berkorelasi dengan 
+model2 <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
+               YearBuilt + GarageCars + ExterQual +
+               KitchenQual + BsmtQual + FullBath + Fireplaces + CentralAir,
+             data = train)
+summary(model2)
+```
+
+```{r model2-evaluasi}
+# Prediksi dan evaluasi Model 2 pada data test
+pred2_test <- predict(model2, newdata = test)
+
+rmse2   <- hitung_rmse(test$SalePrice, pred2_test)
+r2_2    <- summary(model2)$r.squared
+adjr2_2 <- summary(model2)$adj.r.squared
+
+cat("Evaluasi Model 2 (Regresi Berganda)\n")
+cat("R²          :", round(r2_2,    4), "\n")
+cat("Adjusted R² :", round(adjr2_2, 4), "\n")
+cat("RMSE (test) :", round(rmse2,   0), "\n")
+```
+
+### Cek Multikolinearitas (VIF)
+
+Karena banyak prediktor, perlu dicek apakah ada yang saling berkorelasi. Sesuai materi: VIF 1 = tidak ada masalah, 1-5 = ringan, >5 = tinggi.
+
+```{r model2-vif}
+library(car)
+# vif() menghitung Variance Inflation Factor untuk setiap prediktor
+vif(model2)
+```
+
