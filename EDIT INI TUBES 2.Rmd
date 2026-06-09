@@ -1,6 +1,6 @@
 ---
 title: "Tugas Besar 2 — Analisis dan Prediksi Harga Rumah"
-author: "6182401005, 6182401036, 6182401045 "
+author: "6182401005 (Audrianna), 6182401036 (Natasya Keisya H.), 6182401045 (Felice Owen)"
 date: "2026-06-04"
 output: html_document
 ---
@@ -581,7 +581,7 @@ cor.test(df$YearBuilt, df$SalePrice, method = "spearman")
 **Kesimpulan** Dari hasil uji diatas, di dapat nilai p-value sangat kecil sehingga dapat disimpulkan bahwa variabel YearBuilt dengan variabel SalePrice memiliki hubungan yang signifikan. Dari effect size, nilai rhonya 0.6526815 dimana berarti terdapat hubungan yang kuat antara tahun dibangun dengan harga rumah.
 
 
-## 3.7 garageArea - garageCars
+## 3.7 GarageArea - GarageCars
 Untuk menganalisis hubungan antara GarageCars dan GarageArea, digunakan uji Kruskal-Wallis karena variabel GarageCars merupakan variabel kategorikal ordinal, sedangkan GarageArea merupakan variabel numerik yang tidak memenuhi distribusi normal. Uji Kruskal-Wallis merupakan alternatif non-parametrik yang digunakan untuk menguji apakah terdapat perbedaan distribusi atau median luas garasi pada masing-masing kategori kapasitas mobil garasi. Selain itu, visualisasi boxplot digunakan untuk melihat pola distribusi data dan perbedaan antar kelompok.
 
 Hipotesis yang digunakan adalah:
@@ -893,7 +893,7 @@ Hasil evaluasi menghasilkan R^2 yang sama dengan data train sehinga dapat disimp
 ---
 
 ## 4.6 Model 4 - Regresi Linear Berganda
-Model ketiga ini menggunakan **variabel yang hubungan dengan harga rumah paling kuat dari variabel numerik dan kategorik ** dari bagian 2. Variabel tersebut adalah OverallQual dan Neighborhod. Model ini dipilih karena dari 3 variabel sebelumnya, kedua variabel ini menghasilkan model dengan nilai R^2 diatas 0.50
+Model keempat ini menggunakan **variabel yang hubungan dengan harga rumah paling kuat dari variabel numerik dan kategorik ** dari bagian 2. Variabel tersebut adalah OverallQual dan Neighborhod. Model ini dipilih karena dari 3 variabel sebelumnya, kedua variabel ini menghasilkan model dengan nilai R^2 diatas 0.50
 
 ```{r model4-mlr}
 # Model regresi berganda dengan variabel numerik dan kategorikal terpilih
@@ -917,10 +917,10 @@ cat("Adjusted R^2 :", round(adjr2_4, 4), "\n")
 cat("RMSE (test) :", round(rmse4,   0), "\n")
 ```
 
-Dari model ini didapat nilai R^2 0.7182. Tidak perlu dilakukan backward elimination karena variabel OverallQual memiliki p-value yang signifikan dan beberapa kategori neighborhood juga masih memiliki nilai yg signifikan. 
+Dari model ini didapat nilai R^2 0.7182. Tidak perlu dilakukan backward elimination karena variabel OverallQual memiliki p-value yang signifikan dan beberapa kategori neighborhood juga masih memiliki nilai yang signifikan. 
 
 ## 4.5 Model 5 — Regresi Linear Berganda
-Model kedua menggunakan **semua variabel numerik terpilih** dari Bagian 2 dan 3 (tanpa GarageArea karena kolinear dengan GarageCars). Regresi berganda memungkinkan setiap prediktor "mengontrol" pengaruh variabel lain.
+Model kelima menggunakan **semua variabel numerik terpilih** dari Bagian 2 dan 3 (tanpa GarageArea karena kolinear dengan GarageCars). Regresi berganda memungkinkan setiap prediktor "mengontrol" pengaruh variabel lain.
 
 ```{r model5-mlr}
 # Model regresi berganda dengan variabel numerik/ordinal terpilih
@@ -973,7 +973,7 @@ cat("RMSE (test) :", round(rmse5,   0), "\n")
 
 
 ## 4.6 Model 6 - Regresi Linear Berganda
-Model ketiga ini menggunakan **semua variabel yang sudah dieksplorasi** dari bagian 3 yang setelah dieksplorasi didapat hasil "ada hubungan kuat dengan harga rumah" (tanpa GarageArea karena kolinear dengan GarageCars dan GarageCars nilai rhonya lebih tinggi). Variabel yang dipilih adalah : OverallQual, GrLivArea, Neighborhood, ExterQual, YearBuilt, GarageArea, MSSubClass, Foundation, GarageType.
+Model keenam ini menggunakan **semua variabel yang sudah dieksplorasi** dari bagian 3 yang setelah dieksplorasi didapat hasil "ada hubungan kuat dengan harga rumah" (tanpa GarageArea karena kolinear dengan GarageCars dan GarageCars nilai korelasinya lebih tinggi). Variabel yang dipilih adalah : OverallQual, GrLivArea, Neighborhood, ExterQual, YearBuilt, GarageArea, MSSubClass, Foundation, GarageType.
 
 ```{r model6-mlr}
 # Model regresi berganda dengan variabel numerik, ordinal, dan kategorikal terpilih
@@ -1049,7 +1049,7 @@ barplot(model_metrics$R2, names.arg = model_metrics$Model,
 abline(h = 0.8, col = "red", lty = 2)
 ```
 
-**Iterpretasi** Grafik menunjukkan bahwa nilai R^2 meningkat seiring bertambahnya variabel prediktor dalam model. Model 6 memiliki performa terbaik dengan R²^2 = 0,818, yang berarti mampu menjelaskan sekitar 81,8% variasi harga rumah, sedangkan Model 1 dengan variabel OverallQual saja sudah cukup kuat dengan R^2 = 0,626. Secara keseluruhan, kombinasi faktor kualitas, ukuran, usia, fasilitas, dan lokasi rumah menghasilkan peningkatan akurasi prediksi yang signifikan dibandingkan penggunaan satu variabel saja.
+**Interpretasi** Grafik menunjukkan bahwa nilai R^2 meningkat seiring bertambahnya variabel prediktor dalam model. Model 6 memiliki performa terbaik dengan R²^2 = 0,818, yang berarti mampu menjelaskan sekitar 81,8% variasi harga rumah, sedangkan Model 1 dengan variabel OverallQual saja sudah cukup kuat dengan R^2 = 0,626. Secara keseluruhan, kombinasi faktor kualitas, ukuran, usia, fasilitas, dan lokasi rumah menghasilkan peningkatan akurasi prediksi yang signifikan dibandingkan penggunaan satu variabel saja.
 
 
 ### Cek Multikolinearitas (VIF)
