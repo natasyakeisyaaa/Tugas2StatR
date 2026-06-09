@@ -443,9 +443,62 @@ k_oq
 eps2_oq
 ```
 
-**Kesimpulan** Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas sangat signifikan. Epsilon-squared yang besar mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis — bukan hanya efek dari ukuran sampel besar.Boxplot menunjukkan pola jelas yaitu semakin tinggi kualitas, semakin tinggi harga rumah.
+**Kesimpulan** Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas sangat signifikan. Rho yang besar mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis — bukan hanya efek dari ukuran sampel besar.Boxplot menunjukkan pola jelas yaitu semakin tinggi kualitas, semakin tinggi harga rumah.
 
-## 3.3 GrLivArea — Luas Area Tinggal
+## 3.3 ExterQual — Kualitas material exterior rumah
+ExterQual menilai kualitas material dari exterior rumah dari skala Excellent (Ex), Goog (Gd), Average (TA), Fair (FA), sampai Poor (Po). Variabel ini memiliki korelasi Spearman tertinggi keempat dari seluruh variabel numerik. 
+
+```{r eksplorasi-exterqual, fig.height=5}
+# Boxplot: distribusi harga untuk tiap nilai kualitas
+# Menggunakan boxplot karena ExterQuall adalah data ordinal yang akan dibandingkna dengan variabel Sale Price yang merupakan numerik
+# sehingga boxplot per grup lebih informatif daripada scatter plot
+boxplot(SalePrice ~ ExterQual, data = df,
+        main   = "SalePrice berdasarkan ExterQual",
+        xlab   = "Overall Quality (1=Poor, 5=Excellent)",
+        ylab   = "Sale Price ($)",
+        col    = "blue")
+
+#garis untuk memperjelas posisi nilai median 
+abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
+```
+Terdapat banyak outlier pada kategori Average dan Good
+
+```{r}
+kw_oq  <- kruskal.test(SalePrice ~ ExterQual, data = df)
+k_oq   <- length(unique(df$ExterQual))
+eps2_oq <- (kw_oq$statistic - k_oq + 1) / (nrow(df) - k_oq)
+
+kw_oq
+k_oq
+eps2_oq
+```
+**Kesimpulan** Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga antar tingkat kualitas eksterior rumah sangat signifikan. Rho yang bernilai +0.684 mengkonfirmasi bahwa perbedaan ini juga bermakna secara praktis — bukan hanya efek dari ukuran sampel besar.Boxplot menunjukkan pola jelas yaitu semakin tinggi kualitas, semakin tinggi harga rumah.Namun, terlihat beberapa outlier di grup rumah dengan ExterQuall Good dan Average yang artinya ada beberapa rumah yang harganya jauh lebih tinggi dibandingkna rumah lain dengan kualitas eksterior yang sama.
+
+## 3.4 YearBuilt — Tahun rumah dibangun
+YearBuilt merupakan variabel yang menampilkan kapan tahun rumah dibangun. YearBuilt berupa data numerik. Variabel ini memiliki korelasi Spearman tertinggi ketujuh dari seluruh variabel numerik. 
+
+```{r eksplorasi-yearbuiltl, fig.height=5}
+# Scatterplot : distribusi harga rumah untuk tiap tahun rumah dibangun
+# Menggunakan Scatterplot karena YearBuilt adalah variabel numerik yang dibandingkan dengan variabel Sale Price yang merupakan numerik juga
+plot(df$YearBuilt, df$SalePrice,
+     main = "Distribusi harga rumah dari tahun pembangunan",
+     xlab = "Year Built",
+     ylab = "Sale Price",
+     pch = 16,
+     col = "blue"
+     )
+
+#garis untuk memperjelas posisi nilai median 
+abline(lm(SalePrice ~ YearBuilt, data=df),
+      col="red", lwd=2)
+```
+Dari scatterplot, YearBuilt tidak berdistribusi normal dan terbanyak outlier
+```{r}
+cor.test(df$YearBuilt, df$SalePrice, method = "spearman")
+```
+**Kesimpulan** Dari hasil uji diatas, di dapat nilai p-value sangat kecil sehingga dapat disimpulkan bahwa variabel YearBuilt dengan variabel SalePrice memiliki hubungan yang signifikan. Dari effect size, nilai rhonya 0.6526815 dimana berarti terdapat hubungan yang kuat antara tahun dibangun dengan harga rumah.
+
+## 3.5 GrLivArea — Luas Area Tinggal
 GrLivArea` adalah luas area tinggal di atas tanah dalam satuan sqft. Hubungannya dengan harga dieksplorasi menggunakan scatter plot dan regresi linear sederhana.
 
 ```{r}
@@ -494,7 +547,7 @@ Ada hubungan positif yang kuat antara luas area tinggal dan harga. Terlihat juga
 
 Rumah yang lebih baru cenderung lebih mahal. Namun korelasinya tidak sekuat `OverallQual` — ada rumah lama yang masih mahal jika kualitas dan kondisinya terjaga dengan baik.
 
-## 3.5 Neighborhood — Lokasi
+## 3.6 Neighborhood — Lokasi
 `Neighborhood` adalah lokasi fisik rumah di dalam kota Ames. Lokasi adalah salah satu faktor terpenting dalam harga properti.
 
 ```{r}
@@ -536,6 +589,7 @@ df_model <- data.frame(
 
 ```
 
+Variabel KitchenQual, BsmtQual tidak dieksplorasi arena secara makna sudah termasuk ke daalam OverallQual (Kitchen dan Bsmt menilai masing-masing dapur dan basement sedangkan Overall menilai kualitas keseluruhan rumah) meskipun dari nilai rho korelasinya lebih tinggi dibanding variabel-variabel lain yang sudah dieksplorasi. ExterQuall dieksplorasi sebagai pembanding saja.
 
 ## 4. Perbandingan Model
 
