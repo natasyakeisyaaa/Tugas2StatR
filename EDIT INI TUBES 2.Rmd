@@ -809,6 +809,7 @@ hitung_rmse <- function(aktual, prediksi) {
 model1 <- lm(SalePrice ~ OverallQual, data = train)
 summary(model1)
 ```
+OverallQual menghasilkan R^2 0.6262 yang berarti model mencakup 62,62% harga rumah. Angka ini cukup baik untuk sebuah model prediktor.
 ```{r model1-evaluasi}
 # Prediksi pada data test menggunakan predict()
 pred1_test <- predict(model1, newdata = test)
@@ -823,6 +824,7 @@ cat("R^2          :", round(r2_1,    4), "\n")
 cat("Adjusted R^2 :", round(adjr2_1, 4), "\n")
 cat("RMSE (test) :", round(rmse1,   0), "\n")
 ```
+Hasil evaluasi menunjukkan R^2 yang sama dengan data train sehingga dapat disimpulkan model sudah cukup baik dan menyeluruh.
 
 ## 4.4 Model 2 — Regresi Linear Sederhana (GrLivArea)
 ```{r model1-slr}
@@ -831,6 +833,7 @@ cat("RMSE (test) :", round(rmse1,   0), "\n")
 model2 <- lm(SalePrice ~ GrLivArea, data = train)
 summary(model2)
 ```
+Hasil model ini memiliki R^2 0.4904 yang berarti model ini tidak lebih baik dari model sebelumnya. GrLivArea kurang cukup untuk menjadi prediktor harga rumah.
 ```{r model1-evaluasi}
 # Prediksi pada data test menggunakan predict()
 pred2_test <- predict(model2, newdata = test)
@@ -845,6 +848,8 @@ cat("R^2          :", round(r2_2,    4), "\n")
 cat("Adjusted R^2 :", round(adjr2_2, 4), "\n")
 cat("RMSE (test) :", round(rmse2,   0), "\n")
 ```
+Hasil evaluasi menunjukkan R^2 yang sama dengan data train sehingga dapat disimpulkan model sudah cukup menyeluruh.
+
 ## 4.4 Model 3 — Regresi Linear Sederhana (Neighborhood)
 ```{r model1-slr}
 # Model regresi sederhana: SalePrice ~ GrLivArea
@@ -852,6 +857,7 @@ cat("RMSE (test) :", round(rmse2,   0), "\n")
 model3 <- lm(SalePrice ~ Neighborhood, data = train)
 summary(model3)
 ```
+Model dengan prediktor neighborhood menghasilkan R^2 0.5568. Model ini lebih baik dari model yang hanya memiliki prediktor GrLivArea. Namun tidak lebih baik dari prediktor OverallQuall
 
 ```{r model1-evaluasi}
 # Prediksi pada data test menggunakan predict()
@@ -867,11 +873,12 @@ cat("R^2          :", round(r2_3,    4), "\n")
 cat("Adjusted R^2 :", round(adjr2_3, 4), "\n")
 cat("RMSE (test) :", round(rmse3,   0), "\n")
 ```
+Hasil evaluasi menghasilkan R^2 yang sama dengan data train sehinga dapat disimpulkan model sudah cukup menyeluruh.
 
 ---
 
 ## 4.6 Model 4 - Regresi Linear Berganda
-Model ketiga ini menggunakan **variabel yang hubungan dengan harga rumah paling kuat dari variabel numerik dan kategorik ** dari bagian 2. Variabel tersebut adalah OverallQual dan Neighborhodd.
+Model ketiga ini menggunakan **variabel yang hubungan dengan harga rumah paling kuat dari variabel numerik dan kategorik ** dari bagian 2. Variabel tersebut adalah OverallQual dan Neighborhod. Model ini dipilih karena dari 3 variabel sebelumnya, kedua variabel ini menghasilkan model dengan nilai R^2 diatas 0.50
 
 ```{r model4-mlr}
 # Model regresi berganda dengan variabel numerik dan kategorikal terpilih
@@ -892,6 +899,7 @@ model5 <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
              data = train)
 summary(model5)
 ```
+Didapat hasil R^2 0.7802. Angka ini menunjukkan model ini merupakan model paling baik sejauh ini.
 Lakukan backward elimination untuk mengeliminasi variabel yang kurang sesuai sebagai prediktor
 ```{r}
 #backward elimination variabel centralAir
@@ -900,7 +908,10 @@ model5a <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
                KitchenQual + BsmtQual + FullBath + Fireplaces,
              data = train)
 summary(model5a)
+```
+Prediktor CentralAir dibuang karena memiliki p-value paling tinggi. Dengan membuang prediktor CentralAir, R^2 berkurang sangat sedikit yang artinya CentralAir tidak begitu mempengaruhi harga rumah. 
 
+```{r}
 #backward elimination variabel FullBath
 model5b <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
                YearBuilt + GarageCars + ExterQual +
@@ -908,6 +919,7 @@ model5b <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
              data = train)
 summary(model5b)
 ```
+Prediktor FullBath dipilih untuk dibuang berikutnya karena memiliki p-value > 0.05. Setelah dilakukan eliminasi, model memiliki R^2 yang sama dengan sebelumnya sehingga bisa dibikang FullBath tidak bisa menjadi prediktor untuk harga rumah.
 
 Metode backward elimination digunakan untuk menyederhanakan model dengan menghapus variabel yang tidak signifikan terhadap prediksi harga rumah. Pada setiap tahap, jika nilai p-value suatu variable melebihi tingkat signifikansi yang ditetapkan (α = 0,05), maka variabel tersebut dianggap tidak signifikan dan dihapus dari model. Proses ini dilakukan secara iteratif hingga seluruh variabel yang tersisa memiliki kontribusi yang signifikan terhadap model.
 
@@ -980,4 +992,4 @@ vif(model6a)
 Pada model 3 nilai Vif antara 1 - 2,5. Nilai ini sedikit lebih rendah dari nilai vif untuk model 2. Hal ini berarti ada multikolinearitas namun ringan. Berarti model sudah cukup baik dan tidak terjadi kolinearitas antar pasangan variabel. 
 
 ## Kesimpulan
-Model yang paling baik dari hasil eksplorasi kami ad
+Model yang paling baik dari hasil eksplorasi kami adadalah model 6a dengan prediktor OverallQual, GrLivArea, Neighborhood, ExterQual, YearBuilt, GarageCars, MSSubClass, GarageType . Model ini mendapat R^2 0.8177, tertinggi dari semua model yang sudah dieksplorasi. Dengan nilai vif antara 1-2,5 model ini sudah baik karena memiliki multikolinearitas yang ringan sehingga tidak ada lebih dari 1 variabel yang saling mempengaruhi. Haisl uji data train dan data set juga sama dan dapat disimpulkan model ini menguji data secara menyeluruh.  
