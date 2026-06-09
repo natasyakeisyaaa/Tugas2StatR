@@ -468,7 +468,6 @@ Hasil Kruskal-Wallis menunjukkan p-value sangat kecil, artinya perbedaan harga a
 
 Ada hubungan positif yang kuat antara luas area tinggal dan harga. Terlihat juga beberapa outlier — rumah yang sangat luas tapi harganya tidak proporsional, kemungkinan karena kualitas rendah atau kondisi khusus. `GrLivArea` saja hanya menjelaskan sebagian variasi harga — masih ada faktor lain yang perlu diperhitungkan.
 
-```
 
 Rumah yang lebih baru cenderung lebih mahal. Namun korelasinya tidak sekuat `OverallQual` — ada rumah lama yang masih mahal jika kualitas dan kondisinya terjaga dengan baik.
 
