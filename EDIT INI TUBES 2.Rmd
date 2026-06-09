@@ -696,6 +696,46 @@ Hasil uji Kruskal-Wallis menunjukkan nilai χ²(5) = 488.72 dengan p-value < 0.0
 
 Untuk mengukur besarnya pengaruh, dilakukan perhitungan Epsilon-Squared (ε²) dan diperoleh nilai ε² = 0.3327, yang menunjukkan bahwa pengaruh Foundation terhadap SalePrice tergolong besar. Oleh karena itu, jenis fondasi dapat dianggap sebagai salah satu faktor penting yang mempengaruhi harga jual rumah dan layak dipertimbangkan dalam pembangunan model prediksi harga rumah.
 
+
+## 3.10 GarageType - Lokasi garasi berada
+`GarageType` adalah variabel yang menyimpan dimana garasi berada pada suatu rumah. Terdapat kategori :
+2Types - lebih dari 1 tipe garasi di rumah
+Attchd - menyatu dengan rumah
+Basment	- garasi berada d basement
+BuiltIn - garasi merupakan bagia dari rumah
+CarPort	- ada car port (bukan garasi tertutup)
+Detchd - terpisah dari rumah
+None - tidak ada garasi
+
+```{r}
+med_garageType   <- tapply(df$SalePrice, df$GarageType, median)
+garageType_order <- names(sort(med_garageType))
+df$GarageType_f <- factor(df$GarageType, levels = garageType_order)
+
+boxplot(SalePrice ~ GarageType_f, data = df,
+        las      = 2,
+        col      = "lightsteelblue",
+        main     = "Harga Rumah per Tipe garasi (diurutkan berdasarkan Median)",
+        xlab     = "",
+        ylab     = "Sale Price ($)",
+        cex.axis = 0.6,
+        outline  = FALSE)
+abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
+legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
+```
+
+```{r}
+kw_gt  <- kruskal.test(SalePrice ~ GarageType, data = df)
+k_gt   <- length(unique(df$GarageType))
+eps2_gt <- (kw_gt$statistic - k_gt + 1) / (nrow(df) - k_gt)
+
+cat("Kruskal-Wallis Test - GarageType vs SalePrice:\n")
+cat("  p-value     :", format(kw_gt$p.value, scientific = TRUE), "\n")
+cat("  Kesimpulan  :", ifelse(kw_gt$p.value < 0.05, "Signifikan (tolak H0)", "Tidak signifikan"), "\n")
+cat("  Epsilon-squared :", round(eps2_gt, 3), "(0.01=kecil, 0.08 =sedang, 0.26=besar)\n")
+```
+Hasil uji Kruskal-Wallis menunjakan p-value sangat kecil yaitu < 0.05 yang menunjukan bahwa h0 ditolak dan disimpulkan perbedaan tipe garasi mempengaruhi harga rumah secara signifikan. Epsilon squared sebagai effect size juga menunjukkan bahwa perbedaan tipe garasi cukup kuat untuk mempengaruhi harga rumah.
+
 ---
 
 # Bagian 4: Pemodelan Prediksi
@@ -726,7 +766,9 @@ df_model <- data.frame(
   Fireplaces    = df$Fireplaces,
   CentralAir    = df$CentralAir,
   MSSubClass    = df$MSSubClass,      # variabel kategorik dari eksplorasi 3.8
-  Foundation    = df$Foundation       # variabel kategorik dari eksplorasi 3.9
+  Foundation    = df$Foundation,       # variabel kategorik dari eksplorasi 3.9
+  Neighborhood  = df$Neighborhood,
+  GarageType    = df$GarageType
 )
 
 cat("Dimensi data model:", nrow(df_model), "baris,", ncol(df_model), "kolom\n")
@@ -815,6 +857,42 @@ cat("Adjusted R² :", round(adjr2_2, 4), "\n")
 cat("RMSE (test) :", round(rmse2,   0), "\n")
 ```
 
+## 4.6 Model 3 - Regresi Linear Berganda
+Model ketiga ini menggunakan **semua variabel yang sudah dieksplorasi** dari bagian 3 yang setelah dieksplorasi didapat hasil "ada hubungan kuat dengan harga rumah" (tanpa GarageArea karena kolinear dengan GarageCars dan GarageCars nilai rhonya lebih tinggi). Variabel yang dipilih adalah : OverallQual, GrLivArea, Neighborhood, ExterQual, YearBuilt, GarageArea, MSSubClass, Foundation, GarageType.
+
+
+```{r model3-mlr}
+# Model regresi berganda dengan variabel numerik, ordinal, dan kategorikal terpilih
+# GarageArea tidak dimasukkan karena sangat berkorelasi dengan GarageCar
+model3 <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + Foundation + GarageType, data = train)
+summary(model3)
+```
+Lakukan backward elimination untuk membuang variabel yang kurnag tepat sebagai prediktor
+```{r}
+# Buang variabel dengan p-value tertinggi
+# Foundation dipilih karena seluruh kategorinya memiliki nilai p-value di atas 0.05
+model3 <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + GarageType, data = train)
+summary(model3)
+```
+Setelah dilakukan backward elimination terhadap variabel Foundation, p-value yang dihasilkan tidak signifikan dan hasil R-squared yang didapat berkurang hanya 0.0014. Maka Foundation dapat dieliminasi sebagai prediktor harga rumah.
+
+```{r model3-evaluasi}
+# Prediksi dan evaluasi Model 3 pada data test
+pred3_test <- predict(model3, newdata = test)
+
+rmse3   <- hitung_rmse(test$SalePrice, pred3_test)
+r3_3    <- summary(model3)$r.squared
+adjr3_3 <- summary(model3)$adj.r.squared
+
+cat("Evaluasi Model 3 (Regresi Berganda)\n")
+cat("R²          :", round(r3_3,    4), "\n")
+cat("Adjusted R² :", round(adjr3_3, 4), "\n")
+cat("RMSE (test) :", round(rmse3,   0), "\n")
+```
+Dari hasil evaluasi menggunaka data test, didapat nilai R^2 yang sama dengan data train maka dapat disimpulkan tidak terjadi overfitting pada model data ini.
+
+
+
 ### Cek Multikolinearitas (VIF)
 
 Karena banyak prediktor, perlu dicek apakah ada yang saling berkorelasi. Sesuai materi: VIF 1 = tidak ada masalah, 1-5 = ringan, >5 = tinggi.
@@ -825,3 +903,9 @@ library(car)
 vif(model2)
 ```
 
+```{r model3-vif}
+library(car)
+# vif() menghitung Variance Inflation Factor untuk setiap prediktor
+vif(model3)
+```
+Pada model 3 nilai Vif antara 1 - 2,5. Hal ini berarti ada multikolinearitas namun ringan. Berarti model sudah cukup baik dan tidak terjadi kolinearitas antar pasangan variabel.
