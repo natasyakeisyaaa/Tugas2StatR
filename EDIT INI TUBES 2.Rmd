@@ -802,17 +802,13 @@ hitung_rmse <- function(aktual, prediksi) {
 }
 ```
 
-
-## 4.4 Model 1 — Regresi Linear Sederhana
-Model pertama hanya menggunakan **GrLivArea** sebagai satu-satunya prediktor. Ini adalah model paling sederhana yang sudah dibahas di Bagian 3.3, dan dijadikan acuan awal untuk dibandingkan dengan model yang lebih lengkap.
-
+## 4.4 Model 1 — Regresi Linear Sederhana (OverallQual)
 ```{r model1-slr}
 # Model regresi sederhana: SalePrice ~ GrLivArea
 # Sintaks lm() sesuai materi: lm(target ~ prediktor, data)
-model1 <- lm(SalePrice ~ GrLivArea, data = train)
+model1 <- lm(SalePrice ~ OverallQual, data = train)
 summary(model1)
 ```
-
 ```{r model1-evaluasi}
 # Prediksi pada data test menggunakan predict()
 pred1_test <- predict(model1, newdata = test)
@@ -823,89 +819,143 @@ r2_1 <- summary(model1)$r.squared
 adjr2_1 <- summary(model1)$adj.r.squared
 
 cat("Evaluasi Model 1 (Regresi Sederhana)\n")
-cat("R²          :", round(r2_1,    4), "\n")
-cat("Adjusted R² :", round(adjr2_1, 4), "\n")
+cat("R^2          :", round(r2_1,    4), "\n")
+cat("Adjusted R^2 :", round(adjr2_1, 4), "\n")
 cat("RMSE (test) :", round(rmse1,   0), "\n")
+```
+
+## 4.4 Model 2 — Regresi Linear Sederhana (GrLivArea)
+```{r model1-slr}
+# Model regresi sederhana: SalePrice ~ GrLivArea
+# Sintaks lm() sesuai materi: lm(target ~ prediktor, data)
+model2 <- lm(SalePrice ~ GrLivArea, data = train)
+summary(model2)
+```
+```{r model1-evaluasi}
+# Prediksi pada data test menggunakan predict()
+pred2_test <- predict(model2, newdata = test)
+
+# Hitung metrik evaluasi
+rmse2 <- hitung_rmse(test$SalePrice, pred2_test)
+r2_2 <- summary(model2)$r.squared
+adjr2_2 <- summary(model2)$adj.r.squared
+
+cat("Evaluasi Model 1 (Regresi Sederhana)\n")
+cat("R^2          :", round(r2_2,    4), "\n")
+cat("Adjusted R^2 :", round(adjr2_2, 4), "\n")
+cat("RMSE (test) :", round(rmse2,   0), "\n")
+```
+## 4.4 Model 3 — Regresi Linear Sederhana (Neighborhood)
+```{r model1-slr}
+# Model regresi sederhana: SalePrice ~ GrLivArea
+# Sintaks lm() sesuai materi: lm(target ~ prediktor, data)
+model3 <- lm(SalePrice ~ Neighborhood, data = train)
+summary(model3)
+```
+
+```{r model1-evaluasi}
+# Prediksi pada data test menggunakan predict()
+pred3_test <- predict(model3, newdata = test)
+
+# Hitung metrik evaluasi
+rmse3 <- hitung_rmse(test$SalePrice, pred3_test)
+r2_3 <- summary(model3)$r.squared
+adjr2_3 <- summary(model3)$adj.r.squared
+
+cat("Evaluasi Model 3 (Regresi Sederhana)\n")
+cat("R^2          :", round(r2_3,    4), "\n")
+cat("Adjusted R^2 :", round(adjr2_3, 4), "\n")
+cat("RMSE (test) :", round(rmse3,   0), "\n")
 ```
 
 ---
 
-## 4.5 Model 2 — Regresi Linear Berganda
+## 4.6 Model 4 - Regresi Linear Berganda
+Model ketiga ini menggunakan **variabel yang hubungan dengan harga rumah paling kuat dari variabel numerik dan kategorik ** dari bagian 2. Variabel tersebut adalah OverallQual dan Neighborhodd.
+
+```{r model4-mlr}
+# Model regresi berganda dengan variabel numerik dan kategorikal terpilih
+model4 <- lm(SalePrice ~ OverallQual + Neighborhood, data = train)
+summary(model4)
+```
+Dari model ini didapat nilai R^2 0.7182. Tidak perlu dilakukan backward elimination karena variabel OverallQual memiliki p-value yang signifikan dan beberapa kategori neighborhood juga masih memiliki nilai yg signifikan. 
+
+## 4.5 Model 5 — Regresi Linear Berganda
 Model kedua menggunakan **semua variabel numerik terpilih** dari Bagian 2 dan 3 (tanpa GarageArea karena kolinear dengan GarageCars). Regresi berganda memungkinkan setiap prediktor "mengontrol" pengaruh variabel lain.
 
-```{r model2-mlr}
+```{r model5-mlr}
 # Model regresi berganda dengan variabel numerik/ordinal terpilih
 # GarageArea tidak dimasukkan karena sangat berkorelasi dengan 
-model2 <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
+model5 <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
                YearBuilt + GarageCars + ExterQual +
                KitchenQual + BsmtQual + FullBath + Fireplaces + CentralAir,
              data = train)
-summary(model2)
+summary(model5)
 ```
 Lakukan backward elimination untuk mengeliminasi variabel yang kurang sesuai sebagai prediktor
 ```{r}
 #backward elimination variabel centralAir
-model2a <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
+model5a <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
                YearBuilt + GarageCars + ExterQual +
                KitchenQual + BsmtQual + FullBath + Fireplaces,
              data = train)
-summary(model2a)
+summary(model5a)
 
 #backward elimination variabel FullBath
-model2b <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
+model5b <- lm(SalePrice ~ OverallQual + GrLivArea + TotalBsmtSF +
                YearBuilt + GarageCars + ExterQual +
                KitchenQual + BsmtQual + Fireplaces,
              data = train)
-summary(model2b)
+summary(model5b)
 ```
 
 Metode backward elimination digunakan untuk menyederhanakan model dengan menghapus variabel yang tidak signifikan terhadap prediksi harga rumah. Pada setiap tahap, jika nilai p-value suatu variable melebihi tingkat signifikansi yang ditetapkan (α = 0,05), maka variabel tersebut dianggap tidak signifikan dan dihapus dari model. Proses ini dilakukan secara iteratif hingga seluruh variabel yang tersisa memiliki kontribusi yang signifikan terhadap model.
 
-```{r model2-evaluasi}
+```{r model5-evaluasi}
 # Prediksi dan evaluasi Model 2 pada data test
-pred2_test <- predict(model2b, newdata = test)
+pred2_test <- predict(model5b, newdata = test)
 
-rmse2   <- hitung_rmse(test$SalePrice, pred2_test)
-r2_2    <- summary(model2)$r.squared
-adjr2_2 <- summary(model2)$adj.r.squared
+rmse5  <- hitung_rmse(test$SalePrice, pred2_test)
+r5_5    <- summary(model5b)$r.squared
+adjr5_5 <- summary(model5b)$adj.r.squared
 
 cat("Evaluasi Model 2 (Regresi Berganda)\n")
-cat("R²          :", round(r2_2,    4), "\n")
-cat("Adjusted R² :", round(adjr2_2, 4), "\n")
-cat("RMSE (test) :", round(rmse2,   0), "\n")
+cat("R²          :", round(r5_5,    4), "\n")
+cat("Adjusted R² :", round(adjr5_5, 4), "\n")
+cat("RMSE (test) :", round(rmse5,   0), "\n")
 ```
 
-## 4.6 Model 3 - Regresi Linear Berganda
+
+## 4.6 Model 6 - Regresi Linear Berganda
 Model ketiga ini menggunakan **semua variabel yang sudah dieksplorasi** dari bagian 3 yang setelah dieksplorasi didapat hasil "ada hubungan kuat dengan harga rumah" (tanpa GarageArea karena kolinear dengan GarageCars dan GarageCars nilai rhonya lebih tinggi). Variabel yang dipilih adalah : OverallQual, GrLivArea, Neighborhood, ExterQual, YearBuilt, GarageArea, MSSubClass, Foundation, GarageType.
 
-
-```{r model3-mlr}
+```{r model6-mlr}
 # Model regresi berganda dengan variabel numerik, ordinal, dan kategorikal terpilih
 # GarageArea tidak dimasukkan karena sangat berkorelasi dengan GarageCar
-model3 <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + Foundation + GarageType, data = train)
-summary(model3)
+model6 <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + Foundation + GarageType, data = train)
+summary(model6)
 ```
 Lakukan backward elimination untuk membuang variabel yang kurnag tepat sebagai prediktor
 ```{r}
 # Buang variabel dengan p-value tertinggi
 # Foundation dipilih karena seluruh kategorinya memiliki nilai p-value di atas 0.05
-model3a <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + GarageType, data = train)
-summary(model3a)
+model6a <- lm(SalePrice ~ OverallQual + GrLivArea + Neighborhood + ExterQual + YearBuilt + GarageCars + MSSubClass + GarageType, data = train)
+summary(model6a)
 ```
 Setelah dilakukan backward elimination terhadap variabel Foundation, p-value yang dihasilkan tidak signifikan dan hasil R-squared yang didapat berkurang hanya 0.0014. Maka Foundation dapat dieliminasi sebagai prediktor harga rumah.
 
-```{r model3-evaluasi}
-# Prediksi dan evaluasi Model 3 pada data test
-pred3_test <- predict(model3a, newdata = test)
+```{r model6-evaluasi}
+# Prediksi dan evaluasi Model 6 pada data test
+pred6_test <- predict(model6a, newdata = test)
 
-rmse3   <- hitung_rmse(test$SalePrice, pred3_test)
-r3_3    <- summary(model3)$r.squared
-adjr3_3 <- summary(model3)$adj.r.squared
+rmse6   <- hitung_rmse(test$SalePrice, pred6_test)
+r6_6   <- summary(model6a)$r.squared
+adjr6_6 <- summary(model6a)$adj.r.squared
 
 cat("Evaluasi Model 3 (Regresi Berganda)\n")
-cat("R²          :", round(r3_3,    4), "\n")
-cat("Adjusted R² :", round(adjr3_3, 4), "\n")
-cat("RMSE (test) :", round(rmse3,   0), "\n")
+cat("R²          :", round(r6_6,    4), "\n")
+cat("Adjusted R² :", round(adjr6_6, 4), "\n")
+cat("RMSE (test) :", round(rmse6,   0), "\n")
 ```
 Dari hasil evaluasi menggunaka data test, didapat nilai R^2 yang sama dengan data train maka dapat disimpulkan tidak terjadi overfitting pada model data ini.
 
@@ -913,17 +963,21 @@ Dari hasil evaluasi menggunaka data test, didapat nilai R^2 yang sama dengan dat
 
 ### Cek Multikolinearitas (VIF)
 
-Karena banyak prediktor, perlu dicek apakah ada yang saling berkorelasi. Sesuai materi: VIF 1 = tidak ada masalah, 1-5 = ringan, >5 = tinggi.
-
-```{r model2-vif}
-library(car)
-# vif() menghitung Variance Inflation Factor untuk setiap prediktor
-vif(model2)
+Karena banyak prediktor, perlu dicek apakah ada yang saling berkorelasi. Sesuai materi: VIF 1 = tidak ada masalah, 1-5 = ringan, >5 = tinggi.Model 1 tidak perlu dicek karena hanya memiliki 1 prediktor.
+```{r model4-vif}
+vif(model4)
 ```
+Model 5 memiliki nilai vif antara 1 - 1,4. Hal ini berarti ada multi kolinearitas antara kedua variabel namun masih sangat ringan dan model sudah cukup baik.
 
-```{r model3-vif}
-library(car)
-# vif() menghitung Variance Inflation Factor untuk setiap prediktor
-vif(model3)
+```{r model5-vif}
+vif(model5b)
 ```
-Pada model 3 nilai Vif antara 1 - 2,5. Hal ini berarti ada multikolinearitas namun ringan. Berarti model sudah cukup baik dan tidak terjadi kolinearitas antar pasangan variabel.
+Model 5 memiliki nilai vif antara 1,2 - 3,6. Hal ini berarti ada multi kolinearitas namun masih ringan dan model sudah cukup baik.
+
+```{r model6-vif}
+vif(model6a)
+```
+Pada model 3 nilai Vif antara 1 - 2,5. Nilai ini sedikit lebih rendah dari nilai vif untuk model 2. Hal ini berarti ada multikolinearitas namun ringan. Berarti model sudah cukup baik dan tidak terjadi kolinearitas antar pasangan variabel. 
+
+## Kesimpulan
+Model yang paling baik dari hasil eksplorasi kami ad
