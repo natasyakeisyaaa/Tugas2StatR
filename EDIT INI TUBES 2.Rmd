@@ -567,6 +567,125 @@ abline(h = median(df$SalePrice), col = "red", lty = 2, lwd = 1.5)
 legend("topleft", legend = "Median keseluruhan", col = "red", lty = 2, bty = "n", cex = 0.8)
 ```
 
+## 3.7 garageArea - garageCars
+Untuk menganalisis hubungan antara GarageCars dan GarageArea, digunakan uji Kruskal-Wallis karena variabel GarageCars merupakan variabel kategorikal ordinal, sedangkan GarageArea merupakan variabel numerik yang tidak memenuhi distribusi normal. Uji Kruskal-Wallis merupakan alternatif non-parametrik yang digunakan untuk menguji apakah terdapat perbedaan distribusi atau median luas garasi pada masing-masing kategori kapasitas mobil garasi. Selain itu, visualisasi boxplot digunakan untuk melihat pola distribusi data dan perbedaan antar kelompok.
+
+Hipotesis yang digunakan adalah:
+H0: Distribusi GarageArea sama pada seluruh kategori GarageCars.
+H1: Terdapat setidaknya satu kategori GarageCars yang memiliki distribusi GarageArea berbeda.
+```{r garageArea-garageCars}
+# Scatter plot
+boxplot(GarageArea ~ factor(GarageCars),
+        data = df,
+        col = "lightsteelblue",
+        main = "Luas Garasi Berdasarkan Kapasitas Mobil",
+        xlab = "Garage Cars",
+        ylab = "Garage Area (sq ft)",
+        outline = FALSE)
+
+abline(h = median(df$GarageArea),
+       col = "red",
+       lty = 2,
+       lwd = 1.5)
+
+legend("topleft",
+       legend = "Median keseluruhan",
+       col = "red",
+       lty = 2,
+       bty = "n")
+
+kw <- kruskal.test(GarageArea ~ factor(GarageCars),
+                   data = df)
+
+H <- as.numeric(kw$statistic)
+n <- nrow(df)
+k <- length(unique(df$GarageCars))
+
+kw
+epsilon_sq <- (H - k + 1) / (n - k)
+
+epsilon_sq
+cor(df$GarageCars,
+    df$GarageArea,
+    method = "spearman")
+```
+Hasil uji Kruskal-Wallis menunjukkan nilai statistik χ² = 1063.7 dengan p-value < 0.05, sehingga H0 ditolak. Dengan demikian dapat disimpulkan bahwa terdapat perbedaan luas garasi yang signifikan antar kategori GarageCars.
+
+Setelah diketahui bahwa perbedaan tersebut signifikan, dilakukan perhitungan effect size menggunakan Epsilon-Squared (ε²) untuk mengukur besarnya pengaruh GarageCars terhadap GarageArea. Penggunaan ukuran effect size diperlukan karena nilai p-value hanya menunjukkan adanya perbedaan yang signifikan secara statistik, tetapi tidak menunjukkan seberapa besar pengaruhnya. Berdasarkan perhitungan diperoleh nilai ε² = 0.7283 menunjukkan ukuran efek yang sangat besar, sehingga perbedaan GarageArea antar kategori GarageCars memiliki kekuatan pengaruh yang sangat kuat.
+
+Selain itu, dilakukan analisis korelasi Spearman karena GarageCars memiliki sifat ordinal dan GarageArea tidak berdistribusi normal. Hasil korelasi Spearman sebesar ρ = 0.8533 menunjukkan hubungan positif yang sangat kuat antara kapasitas mobil garasi dan luas garasi. Hal ini mengindikasikan bahwa semakin besar kapasitas mobil yang dapat ditampung dalam garasi, maka semakin besar pula luas garasi yang dimiliki rumah.
+
+Secara keseluruhan, hasil boxplot, uji Kruskal-Wallis, nilai Epsilon-Squared, dan korelasi Spearman menunjukkan bahwa GarageCars memiliki hubungan yang sangat kuat dan pengaruh yang sangat besar terhadap GarageArea. Hubungan yang sangat kuat ini mengindikasikan bahwa kedua variabel mengandung informasi yang serupa, sehingga dalam pemodelan prediksi harga rumah dapat dipertimbangkan penggunaan salah satu variabel untuk mengurangi redundansi informasi dan potensi multikolinearitas.
+
+## 3.8 MSSubClass — SalesPrice
+Untuk menganalisis pengaruh tipe rumah (MSSubClass) terhadap harga jual rumah (SalePrice), digunakan uji Kruskal-Wallis karena MSSubClass merupakan variabel kategorikal yang terdiri dari beberapa tipe rumah, sedangkan SalePrice merupakan variabel numerik yang tidak memenuhi asumsi normalitas. Uji ini digunakan untuk mengetahui apakah terdapat perbedaan distribusi harga rumah pada masing-masing tipe rumah.
+
+Hipotesis : 
+H0: Distribusi SalePrice sama pada semua kategori MSSubClass
+H1: Terdapat setidaknya satu kategori MSSubClass yang memiliki distribusi SalePrice berbeda
+```{r MSSubClass-SalesPrice}
+boxplot(SalePrice ~ factor(MSSubClass),
+        data = df,
+        las = 2,
+        col = "lightsteelblue",
+        main = "Sale Price berdasarkan MSSubClass",
+        xlab = "MSSubClass",
+        ylab = "Sale Price ($)",
+        outline = FALSE)
+
+kruskal_MSSub <- kruskal.test(SalePrice ~ factor(MSSubClass),
+             data = df)
+
+HMSsub <- as.numeric(kruskal_MSSub$statistic)
+nMSsub <- nrow(df)
+kMSsub <- length(unique(df$MSSubClass))
+
+epsilon_sq_MSsub <- (HMSsub - kMSsub + 1) / (nMSsub - kMSsub)
+
+kruskal_MSSub
+epsilon_sq_MSsub
+```
+Berdasarkan visualisasi boxplot terlihat bahwa terdapat perbedaan median dan distribusi harga rumah antar kategori MSSubClass. Beberapa kategori seperti MSSubClass 60 dan 120 cenderung memiliki harga yang lebih tinggi dibandingkan kategori lainnya, sedangkan kategori 30 dan 45 memiliki harga yang relatif lebih rendah.
+
+Hasil uji Kruskal-Wallis menunjukkan nilai χ²(14) = 531.54 dengan p-value < 0.05, sehingga H0 ditolak. Dengan demikian dapat disimpulkan bahwa terdapat perbedaan harga rumah yang signifikan antar kategori MSSubClass.
+
+Untuk mengukur besarnya pengaruh, dilakukan perhitungan Epsilon-Squared (ε²) dan diperoleh nilai ε² = 0.3582. Nilai ini menunjukkan bahwa pengaruh MSSubClass terhadap SalePrice tergolong besar. Oleh karena itu, tipe rumah merupakan salah satu faktor yang berperan penting dalam menentukan harga jual rumah dan layak dipertimbangkan sebagai variabel prediktor dalam model prediksi harga rumah.
+
+
+## 3.9 Foundation — SalePrice
+Untuk menganalisis pengaruh jenis fondasi (Foundation) terhadap harga jual rumah (SalePrice), digunakan uji Kruskal-Wallis karena Foundation merupakan variabel kategorikal yang terdiri dari beberapa kelompok, sedangkan SalePrice merupakan variabel numerik yang tidak memenuhi asumsi normalitas.
+
+H0:Distribusi (median) SalePrice sama untuk semua kategori Foundation.
+H1: Terdapat setidaknya satu kategori Foundation yang memiliki distribusi (median) SalePrice berbeda.
+```{r Foundation-SalePrice}
+boxplot(SalePrice ~ factor(Foundation),
+        data = df,
+        las = 2,
+        col = "lightsteelblue",
+        main = "Sale Price berdasarkan Foundation",
+        xlab = "Foundation",
+        ylab = "SalePrice",
+        outline = FALSE)
+
+kruskal_Found <- kruskal.test(SalePrice ~ factor(Foundation),
+             data = df)
+
+HFound <- as.numeric(kruskal_Found$statistic)
+nFound <- nrow(df)
+kFound <- length(unique(df$Foundation))
+
+epsilon_sq_found <- (HFound - kFound + 1) / (nFound - kFound)
+
+kruskal_Found
+epsilon_sq_found
+```
+Berdasarkan boxplot terlihat adanya perbedaan distribusi harga rumah antar jenis fondasi. Rumah dengan fondasi PConc memiliki median harga tertinggi, sedangkan Slab dan CBlock cenderung memiliki median harga yang lebih rendah. Rumah dengan fondasi Poured Concrete (PConc) cenderung memiliki median harga yang lebih tinggi dibandingkan jenis fondasi lainnya, sedangkan rumah dengan fondasi Slab dan CBlock cenderung memiliki median harga yang lebih rendah.
+
+Hasil uji Kruskal-Wallis menunjukkan nilai χ²(5) = 488.72 dengan p-value < 0.05, sehingga H0 ditolak. Dengan demikian dapat disimpulkan bahwa terdapat perbedaan harga rumah yang signifikan antar jenis fondasi.
+
+Untuk mengukur besarnya pengaruh, dilakukan perhitungan Epsilon-Squared (ε²) dan diperoleh nilai ε² = 0.3327, yang menunjukkan bahwa pengaruh Foundation terhadap SalePrice tergolong besar. Oleh karena itu, jenis fondasi dapat dianggap sebagai salah satu faktor penting yang mempengaruhi harga jual rumah dan layak dipertimbangkan dalam pembangunan model prediksi harga rumah.
+
+
 
 # Bagian 4: Pemodelan Prediksi
 ## 4.1 Persiapan Data
@@ -590,6 +709,8 @@ df_model <- data.frame(
 ```
 
 Variabel KitchenQual, BsmtQual tidak dieksplorasi arena secara makna sudah termasuk ke daalam OverallQual (Kitchen dan Bsmt menilai masing-masing dapur dan basement sedangkan Overall menilai kualitas keseluruhan rumah) meskipun dari nilai rho korelasinya lebih tinggi dibanding variabel-variabel lain yang sudah dieksplorasi. ExterQuall dieksplorasi sebagai pembanding saja.
+
+
 
 ## 4. Perbandingan Model
 
